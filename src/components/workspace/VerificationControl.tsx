@@ -108,58 +108,58 @@ export const VerificationControl: React.FC<VerificationControlProps> = ({
         </form>
       ) : (
         /* Action Buttons & State Display */
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           {status === 'VERIFIED' ? (
-            <div className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px] font-semibold">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold shadow-2xs">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
               <span>Verified</span>
               <button
                 onClick={() => setIsEditing(true)}
                 className="ml-1 p-0.5 text-emerald-700 hover:text-emerald-900 rounded hover:bg-emerald-100 cursor-pointer"
                 title="Edit verified value"
               >
-                <Edit2 className="w-3 h-3" />
+                <Edit2 className="w-3.5 h-3.5" />
               </button>
             </div>
           ) : status === 'REJECTED' ? (
-            <div className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-rose-50 border border-rose-200 text-rose-800 text-[11px] font-semibold">
-              <X className="w-3.5 h-3.5 text-rose-600" />
+            <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs font-bold shadow-2xs">
+              <X className="w-4 h-4 text-rose-600" />
               <span>Rejected</span>
               <button
                 onClick={() => setIsEditing(true)}
                 className="ml-1 p-0.5 text-rose-700 hover:text-rose-900 rounded hover:bg-rose-100 cursor-pointer"
                 title="Restore / Edit"
               >
-                <RotateCcw className="w-3 h-3" />
+                <RotateCcw className="w-3.5 h-3.5" />
               </button>
             </div>
           ) : (
             /* Needs Review / Pending Verification */
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1.5">
               <button
                 onClick={handleConfirm}
-                className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-emerald-600 text-white font-medium hover:bg-emerald-700 transition-colors shadow-2xs cursor-pointer text-[11px]"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 text-white font-bold hover:bg-emerald-700 transition-all shadow-xs cursor-pointer text-xs"
                 title="Confirm extracted value as accurate"
               >
-                <Check className="w-3 h-3" />
+                <Check className="w-3.5 h-3.5" />
                 <span>Confirm</span>
               </button>
 
               <button
                 onClick={() => setIsEditing(true)}
-                className="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white border border-slate-300 text-slate-700 font-medium hover:bg-slate-50 transition-colors cursor-pointer text-[11px]"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-300 text-slate-700 font-bold hover:bg-slate-50 transition-all cursor-pointer text-xs shadow-2xs"
                 title="Edit extracted value"
               >
-                <Edit2 className="w-3 h-3 text-slate-500" />
+                <Edit2 className="w-3.5 h-3.5 text-slate-500" />
                 <span>Edit</span>
               </button>
 
               <button
                 onClick={handleReject}
-                className="inline-flex items-center p-1 rounded-md text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                className="inline-flex items-center p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
                 title="Reject extraction"
               >
-                <X className="w-3.5 h-3.5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
           )}

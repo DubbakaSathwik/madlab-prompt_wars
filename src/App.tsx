@@ -40,6 +40,8 @@ export const App: React.FC = () => {
   // Navigation State
   const [currentTab, setCurrentTab] = useState<NavigationTab>('workspace');
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const [sidebarHovered, setSidebarHovered] = useState(false);
+  const [sidebarPinned, setSidebarPinned] = useState(false);
 
   // Clinical Data State
   const [patients, setPatients] = useState<Patient[]>(() => MedicalService.getPatients());
@@ -247,26 +249,69 @@ export const App: React.FC = () => {
 
   // 3. MAIN APPLICATION WORKSPACE & VIEWS
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#F8FAFB]">
-      {/* Sidebar Navigation */}
-      <div className={`${mobileSidebarOpen ? 'block fixed inset-0 z-40' : 'hidden md:block'}`}>
+    <div className="flex h-screen w-screen overflow-hidden bg-[#F8FAFB] relative">
+      {/* Left Edge Hover Hotzone & Pull Tab (triggers sidebar when mouse moves near left edge) */}
+      {!sidebarPinned && (
+        <div
+          onMouseEnter={() => setSidebarHovered(true)}
+          className="fixed left-0 top-0 bottom-0 w-3.5 z-40 hover:w-6 transition-all cursor-pointer group"
+          title="Move mouse here to open navigation"
+        >
+          <div className="absolute left-0.5 top-1/2 -translate-y-1/2 w-1.5 h-16 bg-slate-300 group-hover:bg-[#218DAE] rounded-r-full transition-all shadow-xs group-hover:h-24" />
+        </div>
+      )}
+
+      {/* Dimmed backdrop when hover drawer is open and not pinned */}
+      {!sidebarPinned && (sidebarHovered || mobileSidebarOpen) && (
+        <div
+          onClick={() => {
+            setSidebarHovered(false);
+            setMobileSidebarOpen(false);
+          }}
+          className="fixed inset-0 bg-slate-900/25 backdrop-blur-[1px] z-45 transition-opacity"
+        />
+      )}
+
+      {/* Sidebar Navigation (Slides out on hover, or pinned statically) */}
+      <div
+        onMouseEnter={() => setSidebarHovered(true)}
+        onMouseLeave={() => {
+          if (!sidebarPinned) setSidebarHovered(false);
+        }}
+        className={`${
+          sidebarPinned
+            ? 'relative shrink-0 block z-30 h-full'
+            : `fixed top-0 bottom-0 left-0 z-50 transition-transform duration-300 ease-out transform ${
+                mobileSidebarOpen || sidebarHovered
+                  ? 'translate-x-0'
+                  : '-translate-x-full pointer-events-none'
+              }`
+        }`}
+      >
         <Sidebar
           currentTab={currentTab}
           onTabChange={tab => {
             setCurrentTab(tab);
             setInspectedPatientProfileId(null);
             setMobileSidebarOpen(false);
+            if (!sidebarPinned) setSidebarHovered(false);
           }}
           currentUser={authState.user}
           onLogout={handleLogout}
           onOpenJSONExport={handleOpenJSONModal}
           verificationCount={pendingVerificationCount}
           conflictCount={unresolvedConflictCount}
+          isPinned={sidebarPinned}
+          onTogglePin={() => setSidebarPinned(prev => !prev)}
+          onClose={() => {
+            setSidebarHovered(false);
+            setMobileSidebarOpen(false);
+          }}
         />
       </div>
 
-      {/* Main Content Pane */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
+      {/* Main Content Pane — Occupies 100% full screen when sidebar is hidden */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden w-full min-w-0">
         {/* Top Header */}
         <TopHeader
           patients={patients}
@@ -276,7 +321,15 @@ export const App: React.FC = () => {
           onSelectReport={handleSelectReport}
           onOpenUpload={() => setIsUploadOpen(true)}
           onOpenNewPatient={() => setIsNewPatientOpen(true)}
-          onToggleMobileSidebar={() => setMobileSidebarOpen(prev => !prev)}
+          onToggleMobileSidebar={() => {
+            if (sidebarPinned) {
+              setSidebarPinned(false);
+            } else {
+              setSidebarHovered(prev => !prev);
+              setMobileSidebarOpen(prev => !prev);
+            }
+          }}
+          onHoverSidebar={() => setSidebarHovered(true)}
           conflicts={conflicts}
           onOpenConflictsModal={() => setIsConflictModalOpen(true)}
         />

@@ -64,84 +64,84 @@ export const StructuredResult: React.FC<StructuredResultProps> = ({
   return (
     <div
       onClick={onSelect}
-      className={`relative p-3.5 rounded-xl border transition-all cursor-pointer select-none ${
+      className={`relative p-4 md:p-5 rounded-2xl border transition-all cursor-pointer select-none ${
         isSelected
-          ? 'border-[#218DAE] bg-[#e8f4f8]/50 shadow-sm ring-1 ring-[#218DAE]'
+          ? 'border-[#218DAE] bg-[#e8f4f8]/50 shadow-sm ring-2 ring-[#218DAE]/40'
           : isNeedsReview
           ? 'border-[#FFD758] bg-[#FCE59A]/15 hover:bg-[#FCE59A]/25'
-          : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-2xs'
+          : 'border-slate-200 bg-white hover:border-slate-300 hover:shadow-xs'
       }`}
     >
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         {/* Left: Test Identification & Value */}
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 flex-wrap mb-1">
-            <h4 className="text-sm font-bold text-slate-900 truncate">
+          <div className="flex items-center gap-2.5 flex-wrap mb-1.5">
+            <h4 className="text-base font-extrabold text-slate-900 truncate">
               {test.testName}
             </h4>
             {getStatusBadge(test.status)}
 
             {test.ambiguityDetected && (
               <span 
-                className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300"
+                className="inline-flex items-center gap-1.5 text-xs font-bold px-2.5 py-0.5 rounded-lg bg-amber-100 text-amber-900 border border-amber-300"
                 title={test.ambiguityReason || 'Non-digit characters or smudge detected. Preserved verbatim.'}
               >
-                <AlertTriangle className="w-2.5 h-2.5 text-amber-700" />
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-700" />
                 <span>OCR Ambiguity Detected</span>
               </span>
             )}
 
             {!test.ambiguityDetected && isNeedsReview && (
-              <span className="inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-900 border border-amber-300">
-                <AlertTriangle className="w-2.5 h-2.5 text-amber-700" />
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold px-2 py-0.5 rounded-lg bg-amber-100 text-amber-900 border border-amber-300">
+                <AlertTriangle className="w-3.5 h-3.5 text-amber-700" />
                 Needs Review
               </span>
             )}
           </div>
 
-          <div className="flex items-baseline gap-2">
-            <span className="text-lg font-bold font-mono text-slate-900">
+          <div className="flex items-baseline gap-2.5 my-1">
+            <span className="text-2xl md:text-3xl font-black font-mono text-slate-900 tracking-tight">
               {test.value}
             </span>
-            <span className="text-xs font-semibold text-slate-500">
+            <span className="text-sm font-bold text-slate-600">
               {test.unit}
             </span>
-            <span className="text-xs text-slate-400 pl-2 border-l border-slate-200">
-              Source Ref Range: <strong className="text-slate-700 font-mono font-medium">{test.referenceRange.rawText}</strong>
+            <span className="text-xs md:text-sm text-slate-500 pl-3 border-l border-slate-200">
+              Source Ref Range: <strong className="text-slate-800 font-mono font-bold">{test.referenceRange.rawText}</strong>
             </span>
           </div>
 
           {/* Ambiguity explanation note */}
           {test.ambiguityReason && (
-            <p className="text-[11px] text-amber-800 font-medium mt-1 bg-amber-50 p-1.5 rounded border border-amber-200/80">
+            <p className="text-xs text-amber-900 font-medium mt-1.5 bg-amber-50 p-2 rounded-xl border border-amber-200/80">
               {test.ambiguityReason}
             </p>
           )}
 
           {/* Provenance & Citation line */}
-          <div className="flex items-center gap-3 mt-2 text-[11px] text-slate-400">
+          <div className="flex items-center gap-3.5 mt-2.5 text-xs text-slate-500">
             <button
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 setShowProvenanceModal(true);
               }}
-              className="inline-flex items-center gap-1 text-[#218DAE] hover:underline cursor-pointer font-medium"
+              className="inline-flex items-center gap-1.5 text-[#218DAE] hover:underline cursor-pointer font-bold"
             >
-              <FileText className="w-3 h-3" />
+              <FileText className="w-3.5 h-3.5" />
               <span>{test.provenance.sourceDocument} · p. {test.provenance.page}</span>
             </button>
 
             <span 
-              className="font-mono text-slate-500 inline-flex items-center gap-1 cursor-help"
+              className="font-mono text-slate-600 inline-flex items-center gap-1 cursor-help font-semibold"
               title="Confidence refers to extraction reliability from the source, not medical certainty."
             >
               <span>Conf: {test.provenance.confidence}%</span>
-              <HelpCircle className="w-3 h-3 text-slate-400" />
+              <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
             </span>
 
             {test.canonicalCode && (
-              <span className="text-[10px] text-slate-400 font-mono hidden md:inline">
+              <span className="text-xs text-slate-400 font-mono hidden md:inline">
                 LOINC: {test.canonicalCode}
               </span>
             )}

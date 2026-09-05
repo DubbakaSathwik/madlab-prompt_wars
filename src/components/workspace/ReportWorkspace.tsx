@@ -52,62 +52,62 @@ export const ReportWorkspace: React.FC<ReportWorkspaceProps> = ({
   return (
     <main className="flex-1 h-full flex flex-col bg-white overflow-hidden relative select-none">
       {/* Workspace Toolbar */}
-      <div className="h-12 border-b border-slate-200/90 px-4 flex items-center justify-between bg-white shrink-0 z-10">
+      <div className="h-14 border-b border-slate-200/90 px-4 md:px-6 flex items-center justify-between bg-white shrink-0 z-10">
         {/* Left: Mode Switchers */}
-        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+        <div className="flex items-center gap-1.5 bg-slate-100/90 p-1.5 rounded-2xl">
           <button
             onClick={() => setMode('SOURCE')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+            className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs md:text-sm font-bold transition-all cursor-pointer ${
               mode === 'SOURCE'
-                ? 'bg-white text-slate-900 shadow-2xs'
+                ? 'bg-white text-slate-900 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <FileText className="w-3.5 h-3.5 text-[#218DAE]" />
+            <FileText className="w-4 h-4 text-[#218DAE]" />
             <span>Source</span>
           </button>
 
           <button
             onClick={() => setMode('STRUCTURED')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+            className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs md:text-sm font-bold transition-all cursor-pointer ${
               mode === 'STRUCTURED'
-                ? 'bg-white text-[#186d88] shadow-2xs font-bold'
+                ? 'bg-white text-[#186d88] shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <Table className="w-3.5 h-3.5 text-[#218DAE]" />
+            <Table className="w-4 h-4 text-[#218DAE]" />
             <span>Structured</span>
           </button>
 
           <button
             onClick={() => setMode('REPORT')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+            className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs md:text-sm font-bold transition-all cursor-pointer ${
               mode === 'REPORT'
-                ? 'bg-white text-slate-900 shadow-2xs'
+                ? 'bg-white text-slate-900 shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <FileCheck className="w-3.5 h-3.5 text-[#218DAE]" />
+            <FileCheck className="w-4 h-4 text-[#218DAE]" />
             <span>Report</span>
           </button>
 
           <button
             onClick={() => setMode('GENERATED')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+            className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs md:text-sm font-bold transition-all cursor-pointer ${
               mode === 'GENERATED'
-                ? 'bg-white text-[#186d88] shadow-2xs font-bold'
+                ? 'bg-white text-[#186d88] shadow-xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            <LayoutTemplate className="w-3.5 h-3.5 text-[#218DAE]" />
+            <LayoutTemplate className="w-4 h-4 text-[#218DAE]" />
             <span>Generated</span>
           </button>
         </div>
 
         {/* Center: Active Document Label */}
-        <div className="hidden md:flex items-center gap-2 text-xs">
-          <span className="font-semibold text-slate-800">{report.reportName}</span>
-          <span className="text-slate-400 font-mono text-[11px] font-normal">({report.sourceDocument})</span>
+        <div className="hidden md:flex items-center gap-2.5 text-sm">
+          <span className="font-extrabold text-slate-800">{report.reportName}</span>
+          <span className="text-slate-400 font-mono text-xs">({report.sourceDocument})</span>
         </div>
 
         {/* Right: Workspace Controls (Zoom & Navigation) */}
