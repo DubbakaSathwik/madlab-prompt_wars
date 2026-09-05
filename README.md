@@ -1,4 +1,4 @@
-﻿# MedLens — Clinical Information Intelligence Platform
+# MedLens — Clinical Information Intelligence Platform
 
 [![Vite](https://img.shields.io/badge/Vite-6.x-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
 [![React](https://img.shields.io/badge/React-18.x-61DAFB?logo=react&logoColor=black)](https://reactjs.org/)
@@ -70,15 +70,44 @@
    *(Note: You can also enter or update your API key directly inside the app's Settings view or Upload modal).*
 
 4. **Run the development server**:
-   `ash
+   ```bash
    npm run dev
-   `
-   Open http://localhost:5173/ in your browser.
+   ```
+   Open `http://localhost:5173/` in your browser.
 
 5. **Build for production**:
-   `ash
+   ```bash
    npm run build
-   `
+   ```
+
+---
+
+## 🌐 Deploy to Render
+
+MedLens is fully configured for zero-configuration deployment on [Render](https://render.com/).
+
+### Method 1: Render Blueprint (Recommended — 1-Click)
+1. Go to your [Render Dashboard](https://dashboard.render.com/).
+2. Click **New +** → **Blueprint**.
+3. Connect your repository: `https://github.com/DubbakaSathwik/madlab-prompt_wars.git`.
+4. Render will detect [`render.yaml`](./render.yaml) automatically.
+5. In the Environment Variables section, enter your `GEMINI_API_KEY`.
+6. Click **Apply Blueprint**. Your app will build and deploy on a global CDN.
+
+### Method 2: Manual Static Site Deployment
+1. Go to [Render Dashboard](https://dashboard.render.com/) → **New +** → **Static Site**.
+2. Connect `https://github.com/DubbakaSathwik/madlab-prompt_wars.git`.
+3. Configure the settings:
+   * **Name**: `medlens-ai` (or your choice)
+   * **Branch**: `main`
+   * **Build Command**: `npm run build`
+   * **Publish Directory**: `dist`
+4. In **Advanced** → **Environment Variables**:
+   * Add `GEMINI_API_KEY`: `your_gemini_api_key`
+   * Add `VITE_GEMINI_API_KEY`: `your_gemini_api_key`
+5. Click **Create Static Site**.
+
+*SPA Routing*: The included `public/_redirects` and `render.yaml` rewrite rules ensure deep routes resolve to `/index.html` without 404s.
 
 ---
 
