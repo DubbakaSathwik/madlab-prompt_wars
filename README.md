@@ -221,6 +221,7 @@ MedLens adopts an **Auditable, Deterministic-First, Generative-Second Architectu
 | **Low Impact** | **UI/UX Visual System (Section 3)**| Implemented Section 3 clinical palette (`#70FFD2`, `#FFFC8C`, `#FFCC4D`, `#FF9137`) with refined typography. | **100%** |
 | **Low Impact** | **Turnkey Demonstration Data** | One-click instant synthetic demo patient (*Eleanor Vance*) with multi-panel longitudinal records. | **100%** |
 | **Low Impact** | **Dynamic Document Remounting** | Automatic patient auto-detection on upload with instantaneous PDF/image preview DOM remounting. | **100%** |
+| **Low Impact** | **Testability & Long-Term Maintainability** | *"How easily the code can be tested, validated, and maintained over time."* Single-command verification (`npm run validate`), 96 unit tests (100% green), GitHub Actions CI/CD pipeline, and dedicated [`TESTING.md`](./TESTING.md). | **100%** |
 
 ---
 
@@ -250,7 +251,10 @@ npm run dev
 # 5. Run Automated Vitest Test Suite (96 Tests)
 npm test
 
-# 6. Run Production Build
+# 6. Run Unified Validation Pipeline (Typecheck + 96 Tests + Production Build)
+npm run validate
+
+# 7. Run Production Build Only
 npm run build
 ```
 
