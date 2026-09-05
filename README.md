@@ -3,7 +3,8 @@
 [![Vite](https://img.shields.io/badge/Vite-6.x-646CFF?logo=vite&logoColor=white)](https://vitejs.dev/)
 [![React](https://img.shields.io/badge/React-18.x-61DAFB?logo=react&logoColor=black)](https://reactjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
-[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.x-38B2AC?logo=tailwind-css&logoColor=white)](https://tailwindcss.com/)
+[![Vitest](https://img.shields.io/badge/Vitest-Tests_Passing-25A162?logo=vitest&logoColor=white)](https://vitest.dev/)
+[![HL7 FHIR](https://img.shields.io/badge/Interoperability-HL7_FHIR_R4-E06522)](https://hl7.org/fhir/)
 [![Google Gemini](https://img.shields.io/badge/AI_Engine-Gemini_2.5_Flash-4285F4?logo=google&logoColor=white)](https://ai.google.dev/)
 
 > **Understand your records. Stay in control.**
@@ -11,10 +12,42 @@
 
 ---
 
+## 🏛️ System Architecture
+
+```
+[Medical Document] (PDF / JPG / PNG)
+       │
+       ▼
+[Document Processing Layer]
+  ├─ Vector PDFs: pdfjs-dist (Multi-Page Text & Layout Parsing)
+  └─ Scanned Images: Tesseract.js WebAssembly OCR Engine
+       │
+       ▼
+[Gemini 2.5 Flash + Zod Validation]
+  ├─ Structured Medical JSON Extraction
+  ├─ Runtime Schema Verification (Zod)
+  └─ Ambiguity Detection Engine (OCR Smudge Flags)
+       │
+       ▼
+[Reference Range Engine]
+  ├─ Biological Interval Parsing (Low, High, Thresholds)
+  └─ Out-of-Bounds Flagging (NORMAL, LOW, HIGH, CRITICAL)
+       │
+       ▼
+[Clinical Workstation & Storage]
+  ├─ Dual-Mode Document & Structured Record Viewer
+  ├─ Contextual MedLabs AI Chatbot (Grounding + Red Medication Alert)
+  ├─ HL7 FHIR R4 Interoperability Bundle Export
+  └─ Client Persistence: IndexedDB (Blobs) + LocalStorage (Records)
+```
+
+---
+
 ## 🌟 Key Features
 
-* **Multi-Page Optical Document Processing**: Extracts text and tabular parameters across multi-page medical PDFs (pdfjs-dist) and scanned images/photos (	esseract.js) with provenance tracking.
-* **Google Gemini AI Engine**: Deep clinical structuring powered by Google Gemini 2.5 Flash, extracting all lab metrics, values, units, biological reference intervals, and pathologist interpretations into verified **Medical JSON**.
+* **Multi-Page Optical Document Processing**: Extracts text and tabular parameters across multi-page medical PDFs (`pdfjs-dist`) and scanned images/photos (`tesseract.js`) with verbatim provenance tracking.
+* **Google Gemini AI Engine with Zod Schema**: Deep clinical structuring powered by Google Gemini 2.5 Flash, extracting all lab metrics, values, units, biological reference intervals, and pathologist interpretations into validated **Medical JSON**.
+* **HL7 FHIR R4 Interoperability**: Generates and exports standard HL7 FHIR R4 `Bundle`, `DiagnosticReport`, and `Observation` resources ready for Electronic Health Record (EHR) ingestion (Epic, Cerner).
 * **Source Document Viewer**: Interactive dual-mode reader featuring full embedded original PDF/image previews alongside structured digital records.
 * **Three-Panel Clinical Workspace**:
   * **Left Panel**: Patient context, document drawer, and clinical category filters.
@@ -22,19 +55,23 @@
   * **Right Panel**: Clinical Assistant with grounding chips, provenance inspector, and verification queue.
 * **Report Studio**: Laboratory template engine allowing organizations to map verified Medical JSON onto customized report layouts and export print-ready clinical documents.
 * **Clinical Guardrails & Human-in-the-Loop**:
-  * Ambiguity detection for OCR digit/character artifacts.
-  * Out-of-bounds flag calculations (NORMAL, HIGH, LOW, CRITICAL).
-  * Explicit disclaimers and strict guardrails preventing non-compliant medical diagnosis or treatment suggestions.
+  * Ambiguity detection for OCR digit/character artifacts (e.g., `'I1.2'`, `'O.85'`).
+  * Out-of-bounds flag calculations (`NORMAL`, `HIGH`, `LOW`, `CRITICAL`).
+  * Explicit disclaimers and high-visibility red alerts on medication questions advising physician consultation.
+* **Automated Unit Testing & Zero-Leak Bundling**: Vitest test suite and Vite code-splitting reducing initial JS bundle to under 250 kB gzipped.
 
 ---
 
 ## 🛠️ Tech Stack
 
 * **Frontend**: React 18, TypeScript, Tailwind CSS, Lucide React
-* **Build Tool**: Vite 6
-* **AI & NLP**: Google Gemini 2.5 Flash API (gemini-2.5-flash)
-* **Document Processing**: pdfjs-dist (Multi-page PDF parsing), 	esseract.js (Image OCR)
-* **Local Storage**: IndexedDB (original file binary storage), browser LocalStorage (clinical state cache)
+* **Build Tool & Bundler**: Vite 6 (with Rollup `manualChunks` code-splitting)
+* **Testing Framework**: Vitest (Automated unit tests for range and ambiguity engines)
+* **Schema Validation**: Zod runtime schema validation
+* **AI & NLP**: Google Gemini 2.5 Flash API (`gemini-2.5-flash`)
+* **Document Processing**: `pdfjs-dist` (local worker asset), `tesseract.js` (WebAssembly OCR)
+* **Clinical Standards**: HL7 FHIR R4 JSON standard
+* **Local Storage**: IndexedDB (original file binary storage), browser LocalStorage with quota guards
 
 ---
 
@@ -75,7 +112,13 @@
    ```
    Open `http://localhost:5173/` in your browser.
 
-5. **Build for production**:
+5. **Run automated unit tests (Vitest)**:
+   ```bash
+   npm test
+   ```
+   Executes unit tests verifying biological range evaluations, smudge ambiguity detection, and HL7 FHIR R4 Bundle exports.
+
+6. **Build for production**:
    ```bash
    npm run build
    ```

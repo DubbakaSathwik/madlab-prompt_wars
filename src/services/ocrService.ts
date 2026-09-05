@@ -26,6 +26,8 @@ export interface ExtractedDocumentData {
   tests: LabResult[];
   observations: string[];
   ambiguitiesFound: number;
+  isFallback?: boolean;
+  fallbackReason?: string;
 }
 
 export class OCRService {
@@ -35,8 +37,8 @@ export class OCRService {
   static detectAmbiguity(valText: string): { isAmbiguous: boolean; reason?: string } {
     const trimmed = valText.trim();
 
-    // Check for 'I' or 'l' or '|' substituted for '1' in numbers
-    if (/[I|l][0-9]+\.[0-9]+|[0-9]+\.[I|l][0-9]*/.test(trimmed)) {
+    // Check for 'I' or 'l' or '|' substituted for '1' in numbers (e.g. 'I1.2', '1l.5', '|4.2')
+    if (/[0-9]*[Il|][0-9]*\.[0-9]+|[0-9]+\.[0-9]*[Il|][0-9]*/.test(trimmed)) {
       return {
         isAmbiguous: true,
         reason: `Potential OCR digit ambiguity detected in "${trimmed}" (alphabetic 'I' or 'l' detected in numeric value). Preserved verbatim for human review.`
@@ -133,9 +135,12 @@ export class OCRService {
       }
     }
 
+    let isFallback = false;
     // Fallback if no text could be read
     if (!rawOcrText || rawOcrText.trim().length < 20) {
+      isFallback = true;
       rawOcrText = this.getClinicalFallbackText(fileName);
+      onStageUpdate?.('Notice: Low optical character density detected. Human review required.', 50);
     }
 
     // 3. AI Structuring via Google Gemini API (if key is configured)
@@ -168,7 +173,7 @@ export class OCRService {
     onStageUpdate?.('Structuring Clinical Metrics & Extracting Bounds', 70);
     await new Promise(r => setTimeout(r, 300));
 
-    const extracted = this.parseClinicalText(rawOcrText, fileName);
+    const extracted = this.parseClinicalText(rawOcrText, fileName, isFallback);
 
     onStageUpdate?.('Validating Reference Ranges & Evaluating Provenance', 90);
     await new Promise(r => setTimeout(r, 200));
@@ -180,11 +185,15 @@ export class OCRService {
   /**
    * Deterministic clinical parser that structures text into LabResults with bounds and provenance
    */
-  static parseClinicalText(text: string, sourceFileName: string): ExtractedDocumentData {
+  static parseClinicalText(text: string, sourceFileName: string, isFallback: boolean = false): ExtractedDocumentData {
     const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
     const tests: LabResult[] = [];
     const observations: string[] = [];
     let ambiguitiesFound = 0;
+
+    if (isFallback) {
+      observations.push('ATTENTION: Document contained sparse or unreadable optical characters (< 20 characters). Fallback template populated; values require clinician verification.');
+    }
 
     let facilityName = 'Clinical Pathology Laboratory';
     let docDate = new Date().toISOString().split('T')[0];
@@ -301,7 +310,9 @@ export class OCRService {
       rawText: text,
       tests,
       observations: observations.length > 0 ? observations : ['Automated extraction completed with provenance tracking.'],
-      ambiguitiesFound
+      ambiguitiesFound,
+      isFallback,
+      fallbackReason: isFallback ? 'Optical character density below 20 characters' : undefined
     };
   }
 
@@ -387,6 +398,6 @@ Observation: Cellular hematology evaluation recorded.`;
 
   private static generateStructuredSample(fileName: string): ExtractedDocumentData {
     const rawText = this.getClinicalFallbackText(fileName);
-    return this.parseClinicalText(rawText, fileName);
+    return this.parseClinicalText(rawText, fileName, true);
   }
 }

@@ -624,8 +624,18 @@ export class MedicalService {
     try {
       localStorage.setItem(STORAGE_PATIENTS_KEY, JSON.stringify(this.patients));
       localStorage.setItem(STORAGE_AUDIT_KEY, JSON.stringify(this.auditTrail));
-    } catch (e) {
-      console.warn('LocalStorage save failed', e);
+    } catch (e: any) {
+      console.warn('[MedicalService] LocalStorage save warning:', e);
+      if (e?.name === 'QuotaExceededError' || e?.code === 22 || e?.number === -2147024882) {
+        try {
+          // Keep only recent 50 audit logs to free up storage space
+          this.auditTrail = this.auditTrail.slice(0, 50);
+          localStorage.setItem(STORAGE_AUDIT_KEY, JSON.stringify(this.auditTrail));
+          localStorage.setItem(STORAGE_PATIENTS_KEY, JSON.stringify(this.patients));
+        } catch (retryErr) {
+          console.error('[MedicalService] Critical: localStorage storage capacity exceeded:', retryErr);
+        }
+      }
     }
   }
 }

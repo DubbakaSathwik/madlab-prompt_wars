@@ -1,12 +1,11 @@
 import * as pdfjsLib from 'pdfjs-dist';
 
-// Configure worker source
-try {
-  if (typeof window !== 'undefined' && pdfjsLib.GlobalWorkerOptions) {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs`;
-  }
-} catch (e) {
-  console.warn('[PdfExtractorService] Worker initialization note:', e);
+// Vite worker URL instantiation - standard syntax compatible with TypeScript & Rollup
+if (typeof window !== 'undefined' && pdfjsLib.GlobalWorkerOptions) {
+  pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
+    'pdfjs-dist/build/pdf.worker.min.mjs',
+    import.meta.url
+  ).href;
 }
 
 export interface PdfExtractionResult {
@@ -27,9 +26,10 @@ export class PdfExtractorService {
     });
 
     const pdf = await loadingTask.promise;
-    const pageCount = pdf.numPages;
-    const pageTexts: string[] = [];
-    let fullText = '';
+    try {
+      const pageCount = pdf.numPages;
+      const pageTexts: string[] = [];
+      let fullText = '';
 
     for (let pageNum = 1; pageNum <= pageCount; pageNum++) {
       try {
@@ -66,5 +66,13 @@ export class PdfExtractorService {
     }
 
     return { fullText, pageTexts, pageCount };
+  } finally {
+    try {
+      pdf.cleanup();
+      loadingTask.destroy();
+    } catch {
+      // Ignore disposal warnings
+    }
   }
+}
 }

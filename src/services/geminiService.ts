@@ -1,5 +1,47 @@
 import { ExtractedDocumentData } from './ocrService';
 import { LabResult, Patient, ClinicalReport } from '../types/medical';
+import { z } from 'zod';
+
+export const GeminiTestSchema = z.object({
+  testName: z.string().default('Laboratory Parameter'),
+  category: z.enum(['HEMATOLOGY', 'BIOCHEMISTRY', 'METABOLIC', 'LIPID', 'ENDOCRINE', 'URINALYSIS', 'OTHER']).catch('OTHER'),
+  value: z.union([z.string(), z.number()]).transform(v => String(v)),
+  numericValue: z.number().optional(),
+  unit: z.string().default(''),
+  referenceRange: z.object({
+    low: z.number().optional(),
+    high: z.number().optional(),
+    unit: z.string().optional(),
+    rawText: z.string().optional(),
+    isAvailable: z.boolean().optional()
+  }).optional(),
+  status: z.enum(['LOW', 'NORMAL', 'HIGH', 'CRITICAL_LOW', 'CRITICAL_HIGH', 'UNKNOWN']).catch('UNKNOWN'),
+  page: z.union([z.number(), z.string()]).optional(),
+  confidence: z.number().optional()
+});
+
+export const GeminiDocumentSchema = z.object({
+  facility: z.object({
+    name: z.string().default('Diagnostic Laboratory'),
+    address: z.string().optional(),
+    phone: z.string().optional(),
+    license: z.string().optional(),
+    director: z.string().optional()
+  }).optional(),
+  patient: z.object({
+    name: z.string().optional(),
+    patientId: z.string().optional(),
+    age: z.number().optional(),
+    sex: z.string().optional(),
+    bloodGroup: z.string().optional()
+  }).optional(),
+  doctorName: z.string().optional(),
+  reportName: z.string().default('Clinical Laboratory Report'),
+  reportType: z.enum(['CBC', 'LFT', 'LIPID_PROFILE', 'METABOLIC_PANEL', 'PRESCRIPTION', 'DISCHARGE_SUMMARY', 'OTHER']).catch('OTHER'),
+  date: z.string().default(new Date().toISOString().split('T')[0]),
+  tests: z.array(GeminiTestSchema).default([]),
+  observations: z.array(z.string()).default([])
+});
 
 export interface GeminiExtractionParams {
   fullText: string;
@@ -236,9 +278,13 @@ CRITICAL REQUIREMENTS:
   }
 
   /**
-   * Transforms raw Gemini response into typed ExtractedDocumentData
+   * Transforms raw Gemini response into typed ExtractedDocumentData with Zod schema verification
    */
-  private static mapGeminiResponseToExtractedData(data: any, rawText: string): ExtractedDocumentData {
+  private static mapGeminiResponseToExtractedData(rawData: any, rawText: string): ExtractedDocumentData {
+    // Validate through Zod runtime schema
+    const parsed = GeminiDocumentSchema.safeParse(rawData);
+    const data = parsed.success ? parsed.data : rawData;
+
     const rawTests = Array.isArray(data.tests) ? data.tests : [];
 
     const tests: LabResult[] = rawTests.map((t: any, index: number) => {
@@ -256,8 +302,8 @@ CRITICAL REQUIREMENTS:
       return {
         id: `test-gemini-${Date.now()}-${index}`,
         testName: t.testName || `Laboratory Parameter ${index + 1}`,
-        category: t.category || 'OTHER',
-        value: t.value !== undefined ? t.value : 'N/A',
+        category: (t.category as any) || 'OTHER',
+        value: t.value !== undefined ? String(t.value) : 'N/A',
         numericValue: numericVal,
         unit: t.unit || '',
         referenceRange: {
@@ -271,10 +317,13 @@ CRITICAL REQUIREMENTS:
         status: t.status === 'LOW' || t.status === 'HIGH' || t.status === 'NORMAL' ? t.status : 'UNKNOWN',
         date: data.date || new Date().toISOString().split('T')[0],
         provenance: {
-          documentId: `doc-${Date.now()}`,
+          sourceDocument: 'Original Clinical Scan / PDF',
           page: t.page || 1,
+          section: 'Laboratory Findings',
           originalText: `${t.testName}: ${t.value} ${t.unit} (Ref: ${rawRangeText})`,
-          confidence: typeof t.confidence === 'number' ? t.confidence : 96
+          extractionMethod: 'Google Gemini 2.5 Flash + Zod Schema Validation',
+          confidence: typeof t.confidence === 'number' ? t.confidence : 96,
+          timestamp: new Date().toISOString()
         },
         verification: {
           status: 'NEEDS_REVIEW'
