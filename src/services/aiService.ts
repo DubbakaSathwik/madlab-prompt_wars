@@ -148,6 +148,85 @@ export class AIService {
     }
 
     // =========================================================================
+    // PROMPT INJECTION & JAILBREAK DEFENSE (Section 28 & Hackathon Security)
+    // =========================================================================
+    if (
+      (lower.includes('ignore') && (lower.includes('instruction') || lower.includes('rule') || lower.includes('previous') || lower.includes('safety') || lower.includes('prompt'))) ||
+      lower.includes('jailbreak') ||
+      lower.includes('system prompt') ||
+      lower.includes('pretend you are') ||
+      lower.includes('override safety') ||
+      lower.includes('disregard rules')
+    ) {
+      return {
+        response: {
+          record: 'Security Protocol Active: Clinical Safety Guardrails Engaged.',
+          source: 'MedLens Governance Layer',
+          explanation: 'MedLens AI treats all clinical document contents and user inputs strictly as objective data. System safety policies, patient confidentiality, and non-diagnostic boundaries cannot be overridden or bypassed.',
+          note: 'MedLens operates strictly within certified medical safety boundaries. Diagnostics and prescriptions are reserved exclusively for licensed clinicians.'
+        },
+        followUps: [
+          'Explain my latest report.',
+          'Which results are outside the provided reference ranges?',
+          'What should I ask my doctor?'
+        ]
+      };
+    }
+
+    // =========================================================================
+    // UNAVAILABLE RECORD LOOKUP ("What was my blood pressure last year?", fake facts)
+    // =========================================================================
+    if (
+      (lower.includes('blood pressure') && !activeRep.tests.some(t => t.testName.toLowerCase().includes('blood pressure') || t.testName.toLowerCase().includes('bp'))) ||
+      (lower.includes('last year') && !currentPatient.reports.some(r => r.date.startsWith('2025') || r.date.startsWith('2024'))) ||
+      lower.includes('previous year')
+    ) {
+      return {
+        response: {
+          record: 'The available records do not contain that information.',
+          source: 'Extracted Patient Records',
+          explanation: 'The uploaded laboratory documents do not include historical records or blood pressure measurements for that timeframe. MedLens never invents or hallucinates undocumented clinical facts.',
+          note: 'Only tests, biomarkers, and vitals explicitly extracted from uploaded clinical reports are available. Please upload prior records to view that data.'
+        },
+        followUps: [
+          'Explain my latest report.',
+          'What information is missing?',
+          'What should I ask my doctor?'
+        ]
+      };
+    }
+
+    // =========================================================================
+    // DOSAGE CHANGES & MEDICATION STOPPAGE / CONTRADICTION (Section 21)
+    // =========================================================================
+    if (
+      lower.includes('increase my dose') ||
+      lower.includes('decrease my dose') ||
+      lower.includes('stop my medicine') ||
+      lower.includes('change my dose') ||
+      lower.includes('doctor is wrong') ||
+      lower.includes('what treatment to take')
+    ) {
+      const recordedMeds = currentPatient.medications.length > 0
+        ? currentPatient.medications.map(m => `${m.name} (${m.dosage}, ${m.frequency})`).join('; ')
+        : 'None recorded in uploaded documentation';
+
+      return {
+        response: {
+          record: `Documented Active Medications: ${recordedMeds}.`,
+          source: 'Patient Medical Context Profile',
+          explanation: 'MedLens cannot provide dosage modification instructions, alter therapeutic regimens, or countermand your physician\'s directives. Modifying prescription therapies without clinical oversight carries substantial medical risks.',
+          note: '⚠️ Safety Notice: Never alter, increase, or discontinue medications without direct evaluation by your prescribing physician or licensed healthcare provider.',
+          isMedicationWarning: true
+        },
+        followUps: [
+          'What should I ask my doctor about my medications?',
+          'Explain my latest report.'
+        ]
+      };
+    }
+
+    // =========================================================================
     // GREETINGS & CASUAL CONVERSATION (Task 3)
     // =========================================================================
     if (/^(hi|hello|hey|greetings|good\s+(morning|afternoon|evening)|howdy)\b/i.test(lower) || lower === 'hi' || lower === 'hello' || lower === 'hey') {
@@ -169,7 +248,7 @@ export class AIService {
     }
 
     // =========================================================================
-    // SECTION 22: DIAGNOSIS QUESTIONS ("Do I have diabetes?", "Do I have anemia?")
+    // SECTION 22: DIAGNOSIS QUESTIONS ("Do I have diabetes?", "Do I have cancer?")
     // =========================================================================
     if (
       lower.includes('do i have') ||

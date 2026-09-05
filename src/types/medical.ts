@@ -209,6 +209,7 @@ export interface Patient {
   symptoms: Symptom[];
   history: MedicalHistoryItem[];
   reports: ClinicalReport[];
+  ownerId?: string; // Links patient to authenticated user for user isolation
   createdAt: string;
   updatedAt: string;
 }

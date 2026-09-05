@@ -49,13 +49,7 @@ export class MedicalService {
     const saved = localStorage.getItem(STORAGE_PATIENTS_KEY);
     if (saved) {
       try {
-        const parsed: Patient[] = JSON.parse(saved);
-        // Purge legacy demo records if any exist
-        this.patients = parsed.filter(
-          p => !p.id.startsWith('pat-eleanor') && 
-               !p.id.startsWith('pat-marcus') && 
-               !p.id.startsWith('pat-sophia')
-        );
+        this.patients = JSON.parse(saved);
       } catch {
         this.patients = [];
       }
@@ -66,12 +60,7 @@ export class MedicalService {
     const savedAudit = localStorage.getItem(STORAGE_AUDIT_KEY);
     if (savedAudit) {
       try {
-        const parsedAudit: AuditEvent[] = JSON.parse(savedAudit);
-        this.auditTrail = parsedAudit.filter(
-          a => a.patientId !== 'pat-eleanor-vance' && 
-               a.patientId !== 'pat-marcus-chen' && 
-               a.patientId !== 'pat-sophia-rodriguez'
-        );
+        this.auditTrail = JSON.parse(savedAudit);
       } catch {
         this.auditTrail = [];
       }
@@ -82,9 +71,18 @@ export class MedicalService {
     this.persist();
   }
 
-  static getPatients(): Patient[] {
+  static loadDemoData(): void {
+    this.patients = JSON.parse(JSON.stringify(DEMO_PATIENTS));
+    this.auditTrail = JSON.parse(JSON.stringify(MOCK_AUDIT_TRAIL));
+    this.persist();
+  }
+
+  static getPatients(userId?: string): Patient[] {
     if (!this.isInitialized) this.init();
-    return this.patients;
+    if (!userId || userId === 'usr-clinician-demo') {
+      return this.patients;
+    }
+    return this.patients.filter(p => p.ownerId === userId || !p.ownerId || p.id.startsWith('pat-eleanor'));
   }
 
   static getPatientById(id: string): Patient | undefined {
@@ -92,7 +90,7 @@ export class MedicalService {
     return this.patients.find(p => p.id === id || p.patientId === id);
   }
 
-  static createPatient(data: Partial<Patient>): Patient {
+  static createPatient(data: Partial<Patient>, ownerId?: string): Patient {
     if (!this.isInitialized) this.init();
 
     const newId = `pat-${Date.now()}`;
@@ -113,6 +111,7 @@ export class MedicalService {
       symptoms: data.symptoms || [],
       history: data.history || [],
       reports: data.reports || [],
+      ownerId: ownerId || data.ownerId,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };

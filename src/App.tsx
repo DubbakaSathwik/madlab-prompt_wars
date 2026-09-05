@@ -129,18 +129,37 @@ export const App: React.FC = () => {
   const handleDemoLogin = () => {
     const res = AuthService.loginWithDemo();
     setAuthState({ ...res });
+    MedicalService.loadDemoData();
+    const updated = MedicalService.getPatients(res.user?.id);
+    setPatients([...updated]);
+    if (updated.length > 0) {
+      setActivePatientId(updated[0].id);
+      if (updated[0].reports.length > 0) {
+        setActiveReportId(updated[0].reports[0].id);
+      }
+    }
     setCurrentTab('workspace');
   };
 
   const handleLogin = (email: string, pass: string) => {
     const res = AuthService.login(email, pass);
     setAuthState({ ...res });
+    const updated = MedicalService.getPatients(res.user?.id);
+    setPatients([...updated]);
+    if (updated.length > 0) {
+      setActivePatientId(updated[0].id);
+      if (updated[0].reports.length > 0) {
+        setActiveReportId(updated[0].reports[0].id);
+      }
+    }
     setCurrentTab('workspace');
   };
 
   const handleRegister = (name: string, email: string, pass: string, role: UserRole) => {
     const res = AuthService.register(name, email, pass, role);
     setAuthState({ ...res });
+    const updated = MedicalService.getPatients(res.user?.id);
+    setPatients([...updated]);
     setCurrentTab('workspace');
   };
 
@@ -176,8 +195,8 @@ export const App: React.FC = () => {
 
   // Patient Creation Handler
   const handleCreatePatient = (patientData: Partial<Patient>) => {
-    const created = MedicalService.createPatient(patientData);
-    const updated = MedicalService.getPatients();
+    const created = MedicalService.createPatient(patientData, authState.user?.id);
+    const updated = MedicalService.getPatients(authState.user?.id);
     setPatients([...updated]);
     setActivePatientId(created.id);
     setIsNewPatientOpen(false);

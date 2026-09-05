@@ -33,19 +33,31 @@
 
 /* Status badges & text compliance */
 .badge-status-low {
-  @apply bg-amber-50 text-amber-800 border border-amber-200;
+  @apply bg-[#fff9e6] text-[#b45309] border border-[#fde68a];
 }
 
 .badge-status-normal {
-  @apply bg-emerald-50 text-emerald-800 border border-emerald-200;
+  @apply bg-[#e6fbf3] text-[#047857] border border-[#70FFD2];
 }
 
 .badge-status-high {
-  @apply bg-rose-50 text-rose-800 border border-rose-200;
+  @apply bg-[#fff4eb] text-[#c2410c] border border-[#FF9137]/40;
 }
 
 .badge-status-unknown {
   @apply bg-slate-100 text-slate-700 border border-slate-200;
+}
+
+.badge-status-review {
+  @apply bg-[#fff4eb] text-[#c2410c] border border-[#FF9137];
+}
+
+.badge-status-verified {
+  @apply bg-[#e6fbf3] text-[#065f46] border border-[#70FFD2];
+}
+
+.badge-status-conflict {
+  @apply bg-[#fff4eb] text-[#c2410c] border border-[#FF9137];
 }
 
 /* Printable report styles */
