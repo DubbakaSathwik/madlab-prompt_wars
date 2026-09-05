@@ -54,8 +54,13 @@ export interface GeminiExtractionParams {
 
 export class GeminiService {
   private static API_URL = 'https://generativelanguage.googleapis.com/v1beta/models';
-  private static PRIMARY_MODEL = 'gemini-2.5-flash';
-  private static FALLBACK_MODELS = ['gemini-flash-latest', 'gemini-2.5-flash-lite', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+  private static PRIMARY_MODEL = 'gemini-flash-lite-latest';
+  private static FALLBACK_MODELS = [
+    'gemini-3-flash-preview',
+    'gemini-3.5-flash-lite',
+    'gemini-3.5-flash',
+    'gemini-2.5-flash'
+  ];
 
   /**
    * Retrieves the Gemini API key from environment (.env) or localStorage
@@ -429,11 +434,11 @@ INSTRUCTIONS & BEHAVIORAL PROTOCOLS:
      Respond warmly and conversationally as MedLabs AI, introduce your role as their medical report assistant, and ask how you can help them navigate their laboratory findings.
      Set "isGreeting": true, "isMedicationWarning": false.
 
-2. MEDICAL BIOMARKER & REPORT QUERIES (e.g., "how is my BP", "explain my glucose", "is my hemoglobin okay?"):
-   - Inspect the extracted JSON records for the patient.
-   - Ground your answer strictly on the documented findings. State the exact numeric value, units, dates, and reference ranges from the report.
-   - Compare the value directly with the laboratory's reference range (e.g. "Your post lunch glucose is 100 mg/dL, which is within the normal reference range of <140 mg/dL").
-   - Explain the physiological role of the biomarker in simple, empowering language.
+2. MEDICAL BIOMARKER & SPECIFIC TEST QUERIES (e.g., "explain my Triglycerides", "how is my BP", "explain my glucose", "is my hemoglobin okay?"):
+   - ALWAYS answer the user's specific question directly. If the user asks about a specific test (e.g. Triglycerides, Hemoglobin, Glucose, Blood Pressure, Cholesterol), focus specifically on THAT test!
+   - State the exact recorded value, units, date, and compare it against the laboratory's reference range (e.g. "Your Triglycerides level is 229 mg/dL, which is higher than the normal laboratory reference range of < 150 mg/dL").
+   - Clearly explain what the biomarker is, what function it serves in the body, and what elevated or low numbers typically mean in clear, friendly educational terms.
+   - DO NOT just dump a generic list of all abnormal tests from the report unless the user explicitly asked for all out-of-range tests.
    - Strictly DO NOT provide clinical diagnoses or definitive medical prognoses.
    - Set "isGreeting": false, "isMedicationWarning": false.
 

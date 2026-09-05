@@ -429,9 +429,71 @@ export class AIService {
     }
 
     // =========================================================================
-    // SECTION 17: "What changed from my previous report?" (Longitudinal Comparison)
+    // 1. BIOMARKER LOOKUP & AUTOMATIC VALUE COMPARISON (Task 3 & 6)
+    // Priority: If inquiry targets a specific test or selected test, answer about it directly!
     // =========================================================================
-    if (lower.includes('change') || lower.includes('previous') || lower.includes('compare') || lower.includes('history')) {
+    const testToEvaluate = selectedTest || activeRep.tests.find(t => {
+      const tName = t.testName.toLowerCase();
+      return lower.includes(tName) || 
+        (lower.includes('bp') && (tName.includes('blood pressure') || tName.includes('bp'))) ||
+        (lower.includes('sugar') && tName.includes('glucose')) ||
+        (lower.includes('glucose') && tName.includes('glucose')) ||
+        (lower.includes('lipid') && (tName.includes('triglyceride') || tName.includes('cholesterol')));
+    });
+
+    if (testToEvaluate) {
+      const isNormal = testToEvaluate.status === 'NORMAL';
+      const isHigh = testToEvaluate.status === 'HIGH';
+      const isLow = testToEvaluate.status === 'LOW';
+      const statusComparison = isNormal
+        ? `within the laboratory's documented normal reference interval of ${testToEvaluate.referenceRange.rawText}`
+        : isHigh
+        ? `higher than the laboratory's documented normal reference interval of ${testToEvaluate.referenceRange.rawText}`
+        : `lower than the laboratory's documented normal reference interval of ${testToEvaluate.referenceRange.rawText}`;
+
+      // Educational biological context for common clinical biomarkers
+      let biomarkerDesc = `${testToEvaluate.testName} is a clinical biomarker evaluated in your laboratory report.`;
+      const tNameLower = testToEvaluate.testName.toLowerCase();
+
+      if (tNameLower.includes('triglyceride')) {
+        biomarkerDesc = `Triglycerides are a type of blood lipid (fat) that circulate in your bloodstream and are stored in fat cells to provide energy between meals. When levels exceed reference intervals, it typically reflects excess dietary calories, simple sugars, refined carbohydrates, lack of physical activity, metabolic factors, or genetic tendencies.`;
+      } else if (tNameLower.includes('cholesterol') || tNameLower.includes('lipid') || tNameLower.includes('vldl') || tNameLower.includes('ldl') || tNameLower.includes('hdl')) {
+        biomarkerDesc = `Cholesterol and lipoproteins are essential waxy lipids required to build cell structures and manufacture hormones. Evaluating levels against laboratory reference intervals helps monitor cardiovascular health and lipid metabolism.`;
+      } else if (tNameLower.includes('hemoglobin') || tNameLower.includes('hematocrit') || tNameLower.includes('rbc')) {
+        biomarkerDesc = `Hemoglobin is an iron-containing protein inside red blood cells responsible for carrying oxygen from your lungs to tissues throughout your body. Measurements below reference limits suggest reduced red cell capacity (anemia).`;
+      } else if (tNameLower.includes('glucose') || tNameLower.includes('sugar') || tNameLower.includes('hba1c')) {
+        biomarkerDesc = `Blood glucose is the body's primary circulating sugar providing cellular fuel. It is regulated by the pancreas and insulin to maintain steady metabolic energy.`;
+      } else if (tNameLower.includes('alt') || tNameLower.includes('ast') || tNameLower.includes('bilirubin') || tNameLower.includes('phosphatase')) {
+        biomarkerDesc = `ALT and AST are metabolic enzymes contained within liver tissue cells. Elevations can signal that liver cells are experiencing inflammation, metabolic strain, or reactive changes.`;
+      } else if (tNameLower.includes('wbc') || tNameLower.includes('white blood') || tNameLower.includes('platelet')) {
+        biomarkerDesc = `White blood cells are core elements of your body's immune defense system, while platelets are cell fragments vital for normal blood clotting and tissue repair.`;
+      }
+
+      return {
+        response: {
+          record: `Biomarker: ${testToEvaluate.testName}\n• Documented Value: ${testToEvaluate.value} ${testToEvaluate.unit}\n• Laboratory Reference Range: ${testToEvaluate.referenceRange.rawText}\n• Flag / Status: ${testToEvaluate.status}\n• Document: ${activeRep.reportName} (Page ${testToEvaluate.provenance.page})`,
+          source: `${testToEvaluate.provenance.sourceDocument || activeRep.sourceDocument} · Page ${testToEvaluate.provenance.page}`,
+          explanation: `Your reported ${testToEvaluate.testName} is ${testToEvaluate.value} ${testToEvaluate.unit}. Compared with the testing facility's normal reference range (${testToEvaluate.referenceRange.rawText}), this measurement is ${statusComparison}.\n\n${biomarkerDesc}`,
+          note: `MedLabs AI provides objective data extraction and educational context. A test result outside reference intervals requires interpretation by your attending physician alongside your symptoms, medical history, and clinical exam.`,
+          isMedicationWarning: false
+        },
+        followUps: [
+          `What questions should I ask my doctor about ${testToEvaluate.testName}?`,
+          'Which results are outside the provided reference ranges?',
+          'Explain my latest report.'
+        ]
+      };
+    }
+
+    // =========================================================================
+    // 2. SECTION 17: "What changed from my previous report?" (Longitudinal Comparison)
+    // =========================================================================
+    if (
+      lower.includes('previous report') || 
+      lower.includes('prior report') || 
+      lower.includes('what changed') || 
+      (lower.includes('compare') && (lower.includes('report') || lower.includes('history') || lower.includes('previous') || lower.includes('prior')))
+    ) {
       const prevRep = currentPatient.reports[2] || currentPatient.reports[1];
       if (prevRep) {
         return {
@@ -451,9 +513,14 @@ export class AIService {
     }
 
     // =========================================================================
-    // SECTION 17: "Which results are outside reference ranges?"
+    // 3. SECTION 17: "Which results are outside reference ranges?"
     // =========================================================================
-    if (lower.includes('outside') || lower.includes('abnormal') || lower.includes('out of range') || lower.includes('high') || lower.includes('low')) {
+    if (
+      lower.includes('outside') || 
+      lower.includes('out of range') || 
+      lower.includes('abnormal') ||
+      lower.includes('which results')
+    ) {
       const abnormal = activeRep.tests.filter(t => t.status === 'LOW' || t.status === 'HIGH');
       const details = abnormal.map(
         t => `• ${t.testName}: ${t.value} ${t.unit} (Provided Range: ${t.referenceRange.rawText}) → Status: ${t.status}`
@@ -475,7 +542,7 @@ export class AIService {
     }
 
     // =========================================================================
-    // SECTION 17: "Explain my latest report"
+    // 4. SECTION 17: "Explain my latest report"
     // =========================================================================
     if (lower.includes('latest report') || lower.includes('explain my report') || lower.includes('summarize')) {
       const lowTests = activeRep.tests.filter(t => t.status === 'LOW').map(t => `${t.testName} (${t.value} ${t.unit})`);
@@ -498,7 +565,7 @@ export class AIService {
     }
 
     // =========================================================================
-    // SECTION 17: "What should I ask my doctor?"
+    // 5. SECTION 17: "What should I ask my doctor?"
     // =========================================================================
     if (lower.includes('ask my doctor') || lower.includes('physician') || lower.includes('questions')) {
       return {
@@ -511,39 +578,6 @@ export class AIService {
         followUps: [
           'Generate a structured clinical summary.',
           'What changed from my previous report?',
-          'Explain my latest report.'
-        ]
-      };
-    }
-
-    // =========================================================================
-    // BIOMARKER LOOKUP & AUTOMATIC VALUE COMPARISON (Task 3 & 6)
-    // =========================================================================
-    const testToEvaluate = selectedTest || activeRep.tests.find(t => {
-      const tName = t.testName.toLowerCase();
-      return lower.includes(tName) || 
-        (lower.includes('bp') && (tName.includes('blood pressure') || tName.includes('bp'))) ||
-        (lower.includes('sugar') && tName.includes('glucose')) ||
-        (lower.includes('glucose') && tName.includes('glucose'));
-    });
-
-    if (testToEvaluate) {
-      const isNormal = testToEvaluate.status === 'NORMAL';
-      const statusComparison = isNormal
-        ? `within the laboratory's documented reference range of ${testToEvaluate.referenceRange.rawText}`
-        : `outside the normal interval (${testToEvaluate.status.toLowerCase()} relative to ${testToEvaluate.referenceRange.rawText})`;
-
-      return {
-        response: {
-          record: `Biomarker Record: ${testToEvaluate.testName}\n• Value: ${testToEvaluate.value} ${testToEvaluate.unit}\n• Reference Interval: ${testToEvaluate.referenceRange.rawText}\n• Status: ${testToEvaluate.status}\n• Document: ${activeRep.reportName} (p. ${testToEvaluate.provenance.page})`,
-          source: `${testToEvaluate.provenance.sourceDocument || activeRep.sourceDocument} · Page ${testToEvaluate.provenance.page}`,
-          explanation: `Your recorded ${testToEvaluate.testName} is ${testToEvaluate.value} ${testToEvaluate.unit}. When compared against the testing facility's reference range (${testToEvaluate.referenceRange.rawText}), this measurement is ${statusComparison}. Extraction confidence is ${testToEvaluate.provenance.confidence}%.`,
-          note: `MedLabs AI provides objective report data extraction. Always consult your attending physician to evaluate the clinical significance of these numbers.`,
-          isMedicationWarning: false
-        },
-        followUps: [
-          `Why is it ${testToEvaluate.status.toLowerCase()}?`,
-          'What questions should I ask my doctor?',
           'Explain my latest report.'
         ]
       };
