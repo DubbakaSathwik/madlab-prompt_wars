@@ -153,6 +153,7 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({
         >
           {activeReport ? (
             <ReportWorkspace
+              key={activeReport.id}
               report={activeReport}
               patient={patient}
               selectedTestId={selectedTestId}

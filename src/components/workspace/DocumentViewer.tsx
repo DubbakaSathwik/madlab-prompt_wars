@@ -41,19 +41,15 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
   // Retrieve file URL from memory or IndexedDB on report change
   useEffect(() => {
     let isMounted = true;
-    if (report.fileUrl) {
-      setFileUrl(report.fileUrl);
-    } else {
-      const cached = FileStorageService.getCachedUrl(report.id);
-      if (cached) {
-        setFileUrl(cached);
-      } else {
-        FileStorageService.getFileUrl(report.id).then(url => {
-          if (isMounted && url) {
-            setFileUrl(url);
-          }
-        });
-      }
+    const initialUrl = report.fileUrl || FileStorageService.getCachedUrl(report.id) || null;
+    setFileUrl(initialUrl);
+
+    if (!initialUrl) {
+      FileStorageService.getFileUrl(report.id).then(url => {
+        if (isMounted) {
+          setFileUrl(url || null);
+        }
+      });
     }
     return () => {
       isMounted = false;
@@ -225,11 +221,13 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
               {isPdf ? (
                 <div className="w-full flex-1 rounded-xl overflow-hidden shadow-xl border border-slate-300 bg-white">
                   <object
+                    key={`${report.id}-${fileUrl}`}
                     data={`${fileUrl}#toolbar=1&navpanes=0`}
                     type="application/pdf"
                     className="w-full h-full min-h-[500px]"
                   >
                     <iframe
+                      key={`${report.id}-${fileUrl}`}
                       src={`${fileUrl}#toolbar=1&navpanes=0`}
                       className="w-full h-full border-0"
                       title={report.sourceDocument}
@@ -255,6 +253,7 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
                     className="transition-transform duration-150 flex justify-center"
                   >
                     <img
+                      key={`${report.id}-${fileUrl}`}
                       src={fileUrl}
                       alt={report.sourceDocument}
                       className="max-w-4xl w-auto h-auto rounded-lg shadow-2xl border border-slate-300 bg-white"

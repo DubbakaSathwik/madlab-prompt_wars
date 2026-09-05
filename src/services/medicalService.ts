@@ -93,7 +93,7 @@ export class MedicalService {
   static createPatient(data: Partial<Patient>, ownerId?: string): Patient {
     if (!this.isInitialized) this.init();
 
-    const newId = `pat-${Date.now()}`;
+    const newId = data.id || `pat-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
     const formattedId = data.patientId || `ML-${Math.floor(10000 + Math.random() * 90000)}`;
     const newPatient: Patient = {
       id: newId,

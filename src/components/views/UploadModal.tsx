@@ -55,6 +55,15 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   // Selected Patient for this upload
   const [selectedPatientId, setSelectedPatientId] = useState<string>(activePatient?.id || patients[0]?.id || 'NEW');
   const [newPatientName, setNewPatientName] = useState<string>('');
+  const [autoDetectedName, setAutoDetectedName] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedPatientId(activePatient?.id || patients[0]?.id || 'NEW');
+      setNewPatientName('');
+      setAutoDetectedName(null);
+    }
+  }, [isOpen, activePatient?.id]);
 
   if (!isOpen) return null;
 
@@ -123,6 +132,19 @@ export const UploadModal: React.FC<UploadModalProps> = ({
       setStage('READY_FOR_REVIEW');
       setProgress(100);
       setStageDescription('Structured extraction and reference range validation complete.');
+
+      // Intelligent Patient Detection and Auto-Matching
+      if (extracted.patient?.name && extracted.patient.name.trim() && extracted.patient.name.trim().toLowerCase() !== 'patient') {
+        const detectedName = extracted.patient.name.trim();
+        setAutoDetectedName(detectedName);
+        const existingMatch = patients.find(p => p.name.trim().toLowerCase() === detectedName.toLowerCase());
+        if (existingMatch) {
+          setSelectedPatientId(existingMatch.id);
+        } else {
+          setSelectedPatientId('NEW');
+          setNewPatientName(detectedName);
+        }
+      }
     } catch (e: any) {
       console.error(e);
       setStage('FAILED');
@@ -169,10 +191,14 @@ export const UploadModal: React.FC<UploadModalProps> = ({
       }
     };
 
+    const finalPatientName = selectedPatientId === 'NEW'
+      ? (newPatientName.trim() || extractedData.patient?.name?.trim() || 'Patient ' + (patients.length + 1))
+      : undefined;
+
     onUploadSuccess(
       newReport, 
       selectedPatientId === 'NEW' ? undefined : selectedPatientId,
-      selectedPatientId === 'NEW' ? (newPatientName.trim() || 'Patient ' + (patients.length + 1)) : undefined
+      finalPatientName
     );
   };
 
@@ -183,6 +209,7 @@ export const UploadModal: React.FC<UploadModalProps> = ({
     setProgress(0);
     setExtractedData(null);
     setErrorMessage(null);
+    setAutoDetectedName(null);
   };
 
   const pipelineSteps: { id: ProcessingStage; label: string }[] = [
@@ -420,9 +447,17 @@ export const UploadModal: React.FC<UploadModalProps> = ({
 
               {/* Patient Assignment Selector */}
               <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
-                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">
-                  Assign Document to Patient Record:
-                </label>
+                <div className="flex items-center justify-between flex-wrap gap-1">
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                    Assign Document to Patient Record:
+                  </label>
+                  {autoDetectedName && (
+                    <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-md border border-emerald-300 animate-fade-in">
+                      <Sparkles className="w-3 h-3 text-emerald-600" />
+                      Auto-detected: {autoDetectedName}
+                    </span>
+                  )}
+                </div>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <select
                     value={selectedPatientId}

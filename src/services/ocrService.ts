@@ -203,10 +203,34 @@ export class OCRService {
     let reportType: ExtractedDocumentData['reportType'] = 'CBC';
 
     // Extract dynamic metadata if present in lines
-    const patientLine = lines.find(l => l.toLowerCase().includes('patient:'));
+    const patientLine = lines.find(l => 
+      /(?:patient(?:\s+name)?|pt(?:\.|\s+name)?|name\s+of\s+patient|name)\s*[:\-]/i.test(l) &&
+      !/(?:doctor|physician|hospital|facility|clinic|lab|test|profile|panel)\s*name/i.test(l)
+    );
     if (patientLine) {
-      const match = patientLine.match(/patient:\s*([^|\n]+)/i);
-      if (match && match[1]) patientName = match[1].trim();
+      const match = patientLine.match(/(?:patient(?:\s+name)?|pt(?:\.|\s+name)?|name\s+of\s+patient|name)\s*[:\-]\s*([^|\n,;]+)/i);
+      if (match && match[1]) {
+        const candidate = match[1].trim();
+        if (candidate && !/^(male|female|other|unknown|na|n\/a)$/i.test(candidate)) {
+          patientName = candidate;
+        }
+      }
+    }
+
+    // If text had no explicit patient name label, derive from source file name if possible
+    if (patientName === 'Patient' && sourceFileName) {
+      const baseName = sourceFileName
+        .replace(/\.[a-zA-Z0-9]+$/, '') // strip extension
+        .replace(/[_\-.]/g, ' ')
+        .replace(/\b(report|cbc|lft|lipid|panel|blood|test|lab|results?|scan|doc|pdf|urgentcare|diagnostic)\b/gi, '')
+        .trim();
+      if (baseName.length >= 3 && /^[a-zA-Z\s]+$/.test(baseName)) {
+        patientName = baseName
+          .split(/\s+/)
+          .filter(Boolean)
+          .map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+          .join(' ');
+      }
     }
 
     const doctorLine = lines.find(l => l.toLowerCase().includes('doctor:') || l.toLowerCase().includes('physician:'));
@@ -286,7 +310,15 @@ export class OCRService {
 
     // If no specific lines matched (e.g. sample unstructured text file), produce fallback tests from the document type
     if (tests.length === 0) {
-      return this.generateStructuredSample(sourceFileName);
+      const fallbackSample = this.generateStructuredSample(sourceFileName);
+      if (patientName && patientName !== 'Patient') {
+        fallbackSample.patient.name = patientName;
+      }
+      if (doctorName && doctorName !== 'Attending Physician, MD') {
+        fallbackSample.doctorName = doctorName;
+      }
+      fallbackSample.rawText = text;
+      return fallbackSample;
     }
 
     return {
@@ -327,7 +359,7 @@ export class OCRService {
     // Hemoglobin ................ 11.2 g/dL [13.0 - 17.0]
     // WBC Count ................. 7.2 x10^3/µL [4.5 - 11.0]
     // Hematocrit ................ 34.I % [37.0 - 48.0]  <-- OCR ambiguity example
-    const pattern = /^([A-Za-z0-9\s()\/,-]+?)\s*[.:·]+\s*([0-9IlO.]+)\s*([A-Za-z0-9%^/µ]+(?:\s*[A-Za-z0-9%^/µ]+)?)\s*(?:\[|\(|\s+)([0-9.<>=≥≤+\s-]+(?:g\/dL|mg\/dL|%|x10\^3\/µL|U\/L)?)(?:\]|\))?$/i;
+    const pattern = /^([A-Za-z0-9\s()\/,-]+?)\s*[.:·]+\s*([0-9IlO.]+)\s*([A-Za-z0-9%^/µ]+(?:\s*[A-Za-z0-9%^/µ]+)?)\s*(?:\[|\(|\s+)(?:ref(?:erence)?(?:\s*(?:range|interval))?\s*[:\-])?\s*([0-9.<>=≥≤+\s-]+(?:g\/dL|mg\/dL|%|x10\^3\/µL|U\/L)?)(?:\]|\))?$/i;
     const match = line.match(pattern);
     if (match) {
       const rawName = match[1].trim();

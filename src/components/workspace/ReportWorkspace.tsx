@@ -138,6 +138,7 @@ export const ReportWorkspace: React.FC<ReportWorkspaceProps> = ({
       <div className="flex-1 h-[calc(100%-48px)] overflow-hidden">
         {mode === 'SOURCE' && (
           <DocumentViewer
+            key={report.id}
             report={report}
             patient={patient}
             selectedTestId={selectedTestId}

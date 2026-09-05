@@ -204,4 +204,32 @@ describe('MedicalService', () => {
     expect(exported?.reports[0].tests.length).toBe(1);
     expect(exported?.reports[0].tests[0].name).toBe('Sodium');
   });
+
+  it('should dynamically attach newly extracted reports to the specified patient without cross-contamination', () => {
+    const p1 = MedicalService.createPatient({ name: 'Dubbaka Swarnalatha', sex: 'Female' });
+    const p2 = MedicalService.createPatient({ name: 'Dubbaka Somanarsaiah', sex: 'Male' });
+
+    const reportSomanarsaiah = {
+      id: 'rep-somanarsaiah-1',
+      patientId: p2.id,
+      reportName: 'Complete Blood Count (CBC)',
+      reportType: 'CBC' as const,
+      date: '2026-03-02',
+      sourceDocument: 'Dubbaka_Somanarsaiah_Report.pdf',
+      documentId: 'doc-soma-1',
+      facility: { name: 'Apollo Diagnostics' },
+      tests: [],
+      verificationSummary: { total: 0, verified: 0, needsReview: 0, rejected: 0 }
+    };
+
+    MedicalService.addExtractedReport(p2.id, reportSomanarsaiah);
+
+    const updatedP1 = MedicalService.getPatientById(p1.id);
+    const updatedP2 = MedicalService.getPatientById(p2.id);
+
+    expect(updatedP1?.reports.length).toBe(0);
+    expect(updatedP2?.reports.length).toBe(1);
+    expect(updatedP2?.reports[0].sourceDocument).toBe('Dubbaka_Somanarsaiah_Report.pdf');
+    expect(updatedP2?.reports[0].patientId).toBe(p2.id);
+  });
 });

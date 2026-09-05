@@ -44,4 +44,37 @@ describe('OCRService', () => {
       expect(OCRService.detectAmbiguity('218').isAmbiguous).toBe(false);
     });
   });
+
+  describe('parseClinicalText() Patient Detection', () => {
+    it('should extract patient name from "Patient Name: Dubbaka Somanarsaiah"', () => {
+      const text = `
+Apollo Health City Diagnostic Laboratory
+Patient Name : Dubbaka Somanarsaiah
+Age: 54   Sex: Male   Date: 2026-03-01
+Hemoglobin: 14.2 g/dL (Ref: 13.0 - 17.0)
+      `;
+      const result = OCRService.parseClinicalText(text, 'blood_report.pdf');
+      expect(result.patient.name).toBe('Dubbaka Somanarsaiah');
+    });
+
+    it('should extract patient name from "Name: Dubbaka Somanarsaiah"', () => {
+      const text = `
+Vijaya Diagnostic Centre
+Name: Dubbaka Somanarsaiah
+Doctor: Dr. Ramesh Kumar, MD
+Platelet Count: 240 10^3/uL (Ref: 150 - 450)
+      `;
+      const result = OCRService.parseClinicalText(text, 'lab_scan.pdf');
+      expect(result.patient.name).toBe('Dubbaka Somanarsaiah');
+    });
+
+    it('should fallback to extracting patient name from filename when text has no label', () => {
+      const text = `
+Diagnostic Laboratory Services
+Hemoglobin: 13.5 g/dL (Ref: 12.0 - 16.0)
+      `;
+      const result = OCRService.parseClinicalText(text, 'Dubbaka_Somanarsaiah_Report.pdf');
+      expect(result.patient.name).toBe('Dubbaka Somanarsaiah');
+    });
+  });
 });

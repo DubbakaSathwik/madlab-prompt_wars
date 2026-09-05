@@ -223,17 +223,29 @@ export const App: React.FC = () => {
   // Upload Complete Handler (Integrates newly parsed report into patient's Medical JSON)
   const handleUploadSuccess = (newReport: ClinicalReport, targetPatientId?: string, newPatientName?: string) => {
     setIsUploadOpen(false);
-    let pId = targetPatientId || activePatient?.id;
-    if (!pId && newPatientName) {
-      const created = MedicalService.createPatient({ name: newPatientName });
-      pId = created.id;
-    } else if (!pId && patients.length === 0) {
-      const created = MedicalService.createPatient({ name: 'New Patient' });
-      pId = created.id;
+    let pId = targetPatientId;
+
+    if (!pId && newPatientName && newPatientName.trim()) {
+      const cleanTargetName = newPatientName.trim();
+      const existingPat = patients.find(p => p.name.trim().toLowerCase() === cleanTargetName.toLowerCase());
+      if (existingPat) {
+        pId = existingPat.id;
+      } else {
+        const created = MedicalService.createPatient({ name: cleanTargetName }, authState.user?.id);
+        pId = created.id;
+      }
+    } else if (!pId) {
+      pId = activePatient?.id || (patients.length > 0 ? patients[0].id : undefined);
+      if (!pId) {
+        const created = MedicalService.createPatient({ name: 'New Patient' }, authState.user?.id);
+        pId = created.id;
+      }
     }
+
     if (pId) {
+      newReport.patientId = pId;
       MedicalService.addExtractedReport(pId, newReport);
-      const updated = MedicalService.getPatients();
+      const updated = MedicalService.getPatients(authState.user?.id);
       setPatients([...updated]);
       setActivePatientId(pId);
       setActiveReportId(newReport.id);
