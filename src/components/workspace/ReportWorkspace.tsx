@@ -114,33 +114,33 @@ export const ReportWorkspace: React.FC<ReportWorkspaceProps> = ({
         <div className="flex items-center gap-2">
           {/* Zoom Controls (Active in Source Mode) */}
           {mode === 'SOURCE' && (
-            <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-lg p-0.5 text-xs text-slate-600">
+            <div className="flex items-center gap-1 bg-slate-50 border border-slate-200 rounded-xl p-1 text-xs text-slate-700">
               <button
                 onClick={handleZoomOut}
-                className="p-1 hover:bg-slate-200 rounded cursor-pointer"
+                className="p-1 hover:bg-slate-200 rounded-lg cursor-pointer"
                 title="Zoom Out"
               >
-                <ZoomOut className="w-3.5 h-3.5" />
+                <ZoomOut className="w-4 h-4" />
               </button>
               <button
                 onClick={handleZoomReset}
-                className="px-1.5 font-mono text-[11px] hover:text-slate-900 cursor-pointer"
+                className="px-2 font-mono text-xs font-bold hover:text-slate-900 cursor-pointer"
                 title="Reset Zoom"
               >
                 {Math.round(zoomLevel * 100)}%
               </button>
               <button
                 onClick={handleZoomIn}
-                className="p-1 hover:bg-slate-200 rounded cursor-pointer"
+                className="p-1 hover:bg-slate-200 rounded-lg cursor-pointer"
                 title="Zoom In"
               >
-                <ZoomIn className="w-3.5 h-3.5" />
+                <ZoomIn className="w-4 h-4" />
               </button>
             </div>
           )}
 
           {/* Page Navigation */}
-          <div className="flex items-center gap-1 text-xs text-slate-500 font-mono bg-slate-50 border border-slate-200 px-2 py-1 rounded-lg">
+          <div className="flex items-center gap-1 text-xs text-slate-600 font-mono font-bold bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-xl">
             <span>Page {page} of {totalPages}</span>
           </div>
         </div>

@@ -318,21 +318,21 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
                   </p>
                 </div>
 
-                <div className="pt-2 flex flex-col sm:flex-row gap-2.5 justify-center">
+                <div className="pt-2 flex flex-col sm:flex-row gap-3 justify-center">
                   <button
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isAttaching}
-                    className="px-4 py-2.5 rounded-xl bg-[#218DAE] hover:bg-[#186d88] text-white text-xs font-semibold shadow-sm transition-all cursor-pointer inline-flex items-center justify-center gap-2"
+                    className="px-5 py-3 rounded-xl bg-[#218DAE] hover:bg-[#186d88] text-white text-sm font-bold shadow-sm transition-all cursor-pointer inline-flex items-center justify-center gap-2"
                   >
-                    <Upload className="w-3.5 h-3.5" />
+                    <Upload className="w-4 h-4" />
                     <span>{isAttaching ? 'Attaching...' : `Attach ${report.sourceDocument}`}</span>
                   </button>
 
                   <button
                     onClick={() => setActiveViewMode('SYNTHETIC')}
-                    className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition-colors cursor-pointer inline-flex items-center justify-center gap-2"
+                    className="px-5 py-3 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-sm font-bold transition-colors cursor-pointer inline-flex items-center justify-center gap-2"
                   >
-                    <Eye className="w-3.5 h-3.5" />
+                    <Eye className="w-4 h-4" />
                     <span>View Extracted Template</span>
                   </button>
                 </div>
@@ -409,39 +409,39 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
               </header>
 
               {/* Patient & Specimen Demographics Box */}
-              <section className="bg-slate-50 border border-slate-300 rounded-sm p-3.5 mb-6 text-xs grid grid-cols-2 gap-y-2 gap-x-6">
+              <section className="bg-slate-50 border border-slate-300 rounded-sm p-4 mb-6 text-sm grid grid-cols-2 gap-y-3 gap-x-6">
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Patient Name</span>
-                  <span className="font-bold text-slate-900 text-sm">{patient?.name || 'Patient Record'}</span>
+                  <span className="text-xs uppercase font-bold text-slate-400 block">Patient Name</span>
+                  <span className="font-bold text-slate-900 text-base">{patient?.name || 'Patient Record'}</span>
                 </div>
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Patient ID / MRN</span>
-                  <span className="font-mono font-semibold text-slate-800">{patient?.patientId || report.patientId}</span>
+                  <span className="text-xs uppercase font-bold text-slate-400 block">Patient ID / MRN</span>
+                  <span className="font-mono font-semibold text-slate-800 text-sm">{patient?.patientId || report.patientId}</span>
                 </div>
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Age / Sex / DOB</span>
-                  <span className="text-slate-800 font-medium">
+                  <span className="text-xs uppercase font-bold text-slate-400 block">Age / Sex / DOB</span>
+                  <span className="text-slate-800 font-medium text-sm">
                     {patient ? `${patient.age} Yrs / ${patient.sex} / ${patient.dateOfBirth}` : 'Documented in Chart'}
                   </span>
                 </div>
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Requesting Physician</span>
-                  <span className="text-slate-800 font-medium">{report.doctorName || 'Attending Physician'}</span>
+                  <span className="text-xs uppercase font-bold text-slate-400 block">Requesting Physician</span>
+                  <span className="text-slate-800 font-medium text-sm">{report.doctorName || 'Attending Physician'}</span>
                 </div>
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Specimen Collection Date</span>
-                  <span className="text-slate-800 font-medium font-mono">{report.date} 08:30 AM</span>
+                  <span className="text-xs uppercase font-bold text-slate-400 block">Specimen Collection Date</span>
+                  <span className="text-slate-800 font-medium font-mono text-sm">{report.date} 08:30 AM</span>
                 </div>
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Report Verified Date</span>
-                  <span className="text-slate-800 font-medium font-mono">{report.date} 10:14 AM</span>
+                  <span className="text-xs uppercase font-bold text-slate-400 block">Report Verified Date</span>
+                  <span className="text-slate-800 font-medium font-mono text-sm">{report.date} 10:14 AM</span>
                 </div>
               </section>
 
               {/* Document Title Banner */}
-              <div className="bg-slate-800 text-white px-3 py-1.5 rounded-xs mb-4 flex items-center justify-between text-xs font-bold uppercase tracking-wider">
-                <span>{report.reportName}</span>
-                <span className="text-[10px] font-normal text-slate-300">Method: Automated Flow Cytometry & Photometry</span>
+              <div className="bg-slate-800 text-white px-4 py-2 rounded-xs mb-4 flex items-center justify-between text-xs font-bold uppercase tracking-wider">
+                <span className="text-sm">{report.reportName}</span>
+                <span className="text-xs font-normal text-slate-300">Method: Automated Flow Cytometry & Photometry</span>
               </div>
 
               {/* Laboratory Test Table with Interactive Bounding Boxes & Highlighting */}

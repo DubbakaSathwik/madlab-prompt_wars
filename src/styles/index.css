@@ -4,10 +4,10 @@
 
 @layer base {
   html {
-    font-size: 15.5px;
+    font-size: 17px;
   }
   body {
-    @apply bg-[#F8FAFB] text-slate-800 antialiased font-sans;
+    @apply bg-[#F8FAFB] text-slate-800 antialiased font-sans text-base;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 }

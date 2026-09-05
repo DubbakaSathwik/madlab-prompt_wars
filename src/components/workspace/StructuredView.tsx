@@ -105,38 +105,38 @@ export const StructuredView: React.FC<StructuredViewProps> = ({
 
       {/* Metrics Banner */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-        <div className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+        <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs">
+          <span className="text-xs font-black uppercase tracking-wider text-slate-400 block mb-1">
             Total Extracted Tests
           </span>
-          <span className="text-2xl font-bold font-mono text-slate-800">
+          <span className="text-2xl md:text-3xl font-black font-mono text-slate-900">
             {report.tests.length}
           </span>
         </div>
 
-        <div className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+        <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs">
+          <span className="text-xs font-black uppercase tracking-wider text-slate-400 block mb-1">
             Within Range
           </span>
-          <span className="text-2xl font-bold font-mono text-emerald-700">
+          <span className="text-2xl md:text-3xl font-black font-mono text-emerald-700">
             {withinRangeCount}
           </span>
         </div>
 
-        <div className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+        <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs">
+          <span className="text-xs font-black uppercase tracking-wider text-slate-400 block mb-1">
             Outside Range
           </span>
-          <span className="text-2xl font-bold font-mono text-amber-800">
+          <span className="text-2xl md:text-3xl font-black font-mono text-amber-800">
             {outsideRangeCount}
           </span>
         </div>
 
-        <div className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+        <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-2xs">
+          <span className="text-xs font-black uppercase tracking-wider text-slate-400 block mb-1">
             Requires Review
           </span>
-          <span className={`text-2xl font-bold font-mono ${needsReviewCount > 0 ? 'text-amber-800' : 'text-slate-400'}`}>
+          <span className={`text-2xl md:text-3xl font-black font-mono ${needsReviewCount > 0 ? 'text-amber-800' : 'text-slate-400'}`}>
             {needsReviewCount}
           </span>
         </div>
@@ -145,22 +145,22 @@ export const StructuredView: React.FC<StructuredViewProps> = ({
       {/* Search & Filter Bar (Sections 25 & 26) */}
       <div className="space-y-2 mb-4">
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="relative w-full sm:w-80">
+          <div className="relative w-full sm:w-88">
             <input
               type="text"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder="Search by test name, category, unit, or date..."
-              className="w-full pl-9 pr-3.5 py-2 rounded-xl border border-slate-200 text-xs text-slate-800 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#218DAE]"
+              className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 text-sm font-medium text-slate-800 bg-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#218DAE]"
             />
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5 pointer-events-none" />
+            <Search className="w-4.5 h-4.5 text-slate-400 absolute left-3.5 top-3 pointer-events-none" />
           </div>
 
           {/* Status Filter Tabs */}
-          <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
+          <div className="flex items-center gap-2 w-full sm:w-auto overflow-x-auto pb-1 sm:pb-0">
             <button
               onClick={() => setStatusFilter('ALL')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-colors cursor-pointer ${
                 statusFilter === 'ALL'
                   ? 'bg-[#218DAE] text-white shadow-2xs'
                   : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
@@ -171,7 +171,7 @@ export const StructuredView: React.FC<StructuredViewProps> = ({
 
             <button
               onClick={() => setStatusFilter('OUTSIDE_RANGE')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-colors cursor-pointer ${
                 statusFilter === 'OUTSIDE_RANGE'
                   ? 'bg-amber-700 text-white shadow-2xs'
                   : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
@@ -182,9 +182,9 @@ export const StructuredView: React.FC<StructuredViewProps> = ({
 
             <button
               onClick={() => setStatusFilter('NEEDS_REVIEW')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-colors cursor-pointer ${
                 statusFilter === 'NEEDS_REVIEW'
-                  ? 'bg-[#FFD758] text-amber-950 font-bold shadow-2xs'
+                  ? 'bg-[#FFD758] text-amber-950 shadow-2xs'
                   : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
               }`}
             >
@@ -193,7 +193,7 @@ export const StructuredView: React.FC<StructuredViewProps> = ({
 
             <button
               onClick={() => setStatusFilter('NORMAL')}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold whitespace-nowrap transition-colors cursor-pointer ${
+              className={`px-3.5 py-2 rounded-xl text-xs font-bold whitespace-nowrap transition-colors cursor-pointer ${
                 statusFilter === 'NORMAL'
                   ? 'bg-emerald-700 text-white shadow-2xs'
                   : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-100'
