@@ -1,0 +1,397 @@
+import React, { useState, useEffect } from 'react';
+import { AuthService } from './services/authService';
+import { MedicalService } from './services/medicalService';
+import { AuthState, UserRole } from './types/auth';
+import { Patient, ClinicalReport, MedicalJSONRoot, InconsistencyConflict } from './types/medical';
+
+// Components
+import { IntroSplash } from './components/onboarding/IntroSplash';
+import { AuthLanding } from './components/auth/AuthLanding';
+import { LoginForm } from './components/auth/LoginForm';
+import { RegisterForm } from './components/auth/RegisterForm';
+import { Sidebar, NavigationTab } from './components/navigation/Sidebar';
+import { TopHeader } from './components/navigation/TopHeader';
+import { WorkspaceLayout } from './components/workspace/WorkspaceLayout';
+import { DashboardView } from './components/views/DashboardView';
+import { PatientsView } from './components/views/PatientsView';
+import { PatientProfileView } from './components/views/PatientProfileView';
+import { TimelineView } from './components/views/TimelineView';
+import { ComparisonView } from './components/views/ComparisonView';
+import { ReportStudioView } from './components/views/ReportStudioView';
+import { VerificationCenterView } from './components/views/VerificationCenterView';
+import { ConflictCenterView } from './components/views/ConflictCenterView';
+import { AuditTrailView } from './components/views/AuditTrailView';
+import { SettingsView } from './components/views/SettingsView';
+import { UploadModal } from './components/views/UploadModal';
+import { MedicalJSONModal } from './components/views/MedicalJSONModal';
+import { ConflictModal } from './components/views/ConflictModal';
+import { NewPatientModal } from './components/views/NewPatientModal';
+
+export const App: React.FC = () => {
+  // Onboarding Intro Splash State
+  const [showIntro, setShowIntro] = useState<boolean>(() => {
+    return !sessionStorage.getItem('medlens_intro_viewed');
+  });
+
+  // Auth State
+  const [authState, setAuthState] = useState<AuthState>(() => AuthService.init());
+  const [authView, setAuthView] = useState<'landing' | 'login' | 'register'>('landing');
+
+  // Navigation State
+  const [currentTab, setCurrentTab] = useState<NavigationTab>('workspace');
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+
+  // Clinical Data State
+  const [patients, setPatients] = useState<Patient[]>(() => MedicalService.getPatients());
+  const [activePatientId, setActivePatientId] = useState<string>(patients[0]?.id || '');
+  const [activeReportId, setActiveReportId] = useState<string>(patients[0]?.reports[0]?.id || '');
+  const [inspectedPatientProfileId, setInspectedPatientProfileId] = useState<string | null>(null);
+
+  // Modals
+  const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [isNewPatientOpen, setIsNewPatientOpen] = useState(false);
+  const [isJSONModalOpen, setIsJSONModalOpen] = useState(false);
+  const [isConflictModalOpen, setIsConflictModalOpen] = useState(false);
+  const [jsonExportData, setJsonExportData] = useState<MedicalJSONRoot | null>(null);
+  const [conflicts, setConflicts] = useState<InconsistencyConflict[]>([]);
+
+  useEffect(() => {
+    MedicalService.init();
+    const loaded = MedicalService.getPatients();
+    setPatients(loaded);
+    if (loaded.length > 0 && !activePatientId) {
+      setActivePatientId(loaded[0].id);
+      if (loaded[0].reports.length > 0) {
+        setActiveReportId(loaded[0].reports[0].id);
+      }
+    }
+  }, []);
+
+  const activePatient = patients.find(p => p.id === activePatientId) || patients[0];
+  const activeReport = activePatient?.reports.find(r => r.id === activeReportId) || activePatient?.reports[0];
+
+  useEffect(() => {
+    if (activePatient) {
+      const detected = MedicalService.detectInconsistencies(activePatient.id);
+      setConflicts(detected);
+    }
+  }, [activePatientId, patients]);
+
+  const handleFinishIntro = () => {
+    setShowIntro(false);
+    sessionStorage.setItem('medlens_intro_viewed', 'true');
+  };
+
+  // Auth Handlers
+  const handleDemoLogin = () => {
+    const res = AuthService.loginWithDemo();
+    setAuthState({ ...res });
+    setCurrentTab('workspace');
+  };
+
+  const handleLogin = (email: string, pass: string) => {
+    const res = AuthService.login(email, pass);
+    setAuthState({ ...res });
+    setCurrentTab('workspace');
+  };
+
+  const handleRegister = (name: string, email: string, pass: string, role: UserRole) => {
+    const res = AuthService.register(name, email, pass, role);
+    setAuthState({ ...res });
+    setCurrentTab('workspace');
+  };
+
+  const handleLogout = () => {
+    const res = AuthService.logout();
+    setAuthState({ ...res });
+    setAuthView('landing');
+  };
+
+  // Patient & Workspace Selection Handlers
+  const handleSelectPatient = (patientId: string) => {
+    setActivePatientId(patientId);
+    const targetPat = patients.find(p => p.id === patientId);
+    if (targetPat && targetPat.reports.length > 0) {
+      setActiveReportId(targetPat.reports[0].id);
+    }
+  };
+
+  const handleSelectReport = (reportId: string) => {
+    setActiveReportId(reportId);
+    setCurrentTab('workspace');
+  };
+
+  const handleOpenWorkspaceFromDashboard = (patientId?: string, reportId?: string) => {
+    if (patientId) setActivePatientId(patientId);
+    if (reportId) setActiveReportId(reportId);
+    setCurrentTab('workspace');
+  };
+
+  const handleViewPatientProfile = (patientId: string) => {
+    setInspectedPatientProfileId(patientId);
+  };
+
+  // Patient Creation Handler
+  const handleCreatePatient = (patientData: Partial<Patient>) => {
+    const created = MedicalService.createPatient(patientData);
+    const updated = MedicalService.getPatients();
+    setPatients([...updated]);
+    setActivePatientId(created.id);
+    setIsNewPatientOpen(false);
+  };
+
+  // Verification Update Handler
+  const handleVerifyTest = (
+    testId: string, 
+    action: 'CONFIRM' | 'EDIT' | 'REJECT', 
+    editData?: { value: string | number; unit?: string; notes?: string }
+  ) => {
+    if (!activePatient || !activeReport) return;
+    MedicalService.updateVerification(
+      activePatient.id,
+      activeReport.id,
+      testId,
+      action,
+      authState.user?.name || 'Dr. Kenneth Reed',
+      editData
+    );
+    setPatients([...MedicalService.getPatients()]);
+  };
+
+  // Upload Complete Handler (Integrates newly parsed report into patient's Medical JSON)
+  const handleUploadSuccess = (newReport: ClinicalReport, targetPatientId?: string, newPatientName?: string) => {
+    setIsUploadOpen(false);
+    let pId = targetPatientId || activePatient?.id;
+    if (!pId && newPatientName) {
+      const created = MedicalService.createPatient({ name: newPatientName });
+      pId = created.id;
+    } else if (!pId && patients.length === 0) {
+      const created = MedicalService.createPatient({ name: 'New Patient' });
+      pId = created.id;
+    }
+    if (pId) {
+      MedicalService.addExtractedReport(pId, newReport);
+      const updated = MedicalService.getPatients();
+      setPatients([...updated]);
+      setActivePatientId(pId);
+      setActiveReportId(newReport.id);
+      setCurrentTab('workspace');
+    }
+  };
+
+  // Conflict Resolution Handler
+  const handleResolveConflict = (conflictId: string, resolvedValue: string) => {
+    MedicalService.resolveConflict(conflictId, resolvedValue, authState.user?.name || 'Dr. Kenneth Reed');
+    setConflicts(prev => prev.map(c => c.id === conflictId ? { ...c, isResolved: true, resolvedValue } : c));
+    setIsConflictModalOpen(false);
+  };
+
+  // JSON Export Handler
+  const handleOpenJSONModal = () => {
+    if (!activePatient) return;
+    const exported = MedicalService.exportMedicalJSON(activePatient.id);
+    setJsonExportData(exported);
+    setIsJSONModalOpen(true);
+  };
+
+  // Reset Demo Data Handler
+  const handleResetDemoData = () => {
+    MedicalService.clearAllData();
+    const fresh = MedicalService.getPatients();
+    setPatients(fresh);
+    setActivePatientId(fresh[0]?.id || '');
+    setActiveReportId(fresh[0]?.reports[0]?.id || '');
+  };
+
+  // 1. FIRST-LAUNCH EXPERIENCE (CINEMATIC INTRO & SAFETY NOTICE)
+  if (showIntro) {
+    return <IntroSplash onComplete={handleFinishIntro} />;
+  }
+
+  // 2. AUTHENTICATION SCREENS
+  if (!authState.isAuthenticated) {
+    if (authView === 'login') {
+      return (
+        <LoginForm
+          onSuccess={handleLogin}
+          onDemoLogin={handleDemoLogin}
+          onBack={() => setAuthView('landing')}
+          onSwitchToRegister={() => setAuthView('register')}
+        />
+      );
+    }
+
+    if (authView === 'register') {
+      return (
+        <RegisterForm
+          onSuccess={handleRegister}
+          onBack={() => setAuthView('landing')}
+          onSwitchToLogin={() => setAuthView('login')}
+        />
+      );
+    }
+
+    return (
+      <AuthLanding
+        onLoginClick={() => setAuthView('login')}
+        onRegisterClick={() => setAuthView('register')}
+        onDemoClick={handleDemoLogin}
+      />
+    );
+  }
+
+  const pendingVerificationCount = activePatient?.reports?.reduce((acc, report) => {
+    return acc + report.tests.filter(t => t.verification.status === 'NEEDS_REVIEW' || t.ambiguityDetected).length;
+  }, 0) || 0;
+  const unresolvedConflictCount = conflicts.filter(c => !c.isResolved).length;
+
+  // 3. MAIN APPLICATION WORKSPACE & VIEWS
+  return (
+    <div className="flex h-screen w-screen overflow-hidden bg-[#F8FAFB]">
+      {/* Sidebar Navigation */}
+      <div className={`${mobileSidebarOpen ? 'block fixed inset-0 z-40' : 'hidden md:block'}`}>
+        <Sidebar
+          currentTab={currentTab}
+          onTabChange={tab => {
+            setCurrentTab(tab);
+            setInspectedPatientProfileId(null);
+            setMobileSidebarOpen(false);
+          }}
+          currentUser={authState.user}
+          onLogout={handleLogout}
+          onOpenJSONExport={handleOpenJSONModal}
+          verificationCount={pendingVerificationCount}
+          conflictCount={unresolvedConflictCount}
+        />
+      </div>
+
+      {/* Main Content Pane */}
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
+        {/* Top Header */}
+        <TopHeader
+          patients={patients}
+          activePatient={activePatient}
+          onSelectPatient={handleSelectPatient}
+          activeReport={activeReport}
+          onSelectReport={handleSelectReport}
+          onOpenUpload={() => setIsUploadOpen(true)}
+          onOpenNewPatient={() => setIsNewPatientOpen(true)}
+          onToggleMobileSidebar={() => setMobileSidebarOpen(prev => !prev)}
+          conflicts={conflicts}
+          onOpenConflictsModal={() => setIsConflictModalOpen(true)}
+        />
+
+        {/* Dynamic Route View */}
+        <div className="flex-1 h-[calc(100%-56px)] overflow-hidden">
+          {inspectedPatientProfileId ? (
+            <PatientProfileView
+              patient={patients.find(p => p.id === inspectedPatientProfileId) || activePatient}
+              onBack={() => setInspectedPatientProfileId(null)}
+              onOpenWorkspace={() => {
+                setActivePatientId(inspectedPatientProfileId);
+                setInspectedPatientProfileId(null);
+                setCurrentTab('workspace');
+              }}
+            />
+          ) : currentTab === 'overview' ? (
+            <DashboardView
+              patients={patients}
+              activePatient={activePatient}
+              onOpenWorkspace={handleOpenWorkspaceFromDashboard}
+              onOpenUpload={() => setIsUploadOpen(true)}
+              onOpenCompare={() => setCurrentTab('compare')}
+              auditTrail={MedicalService.getAuditTrail()}
+            />
+          ) : currentTab === 'workspace' || currentTab === 'reports' || currentTab === 'ask-medlens' ? (
+            <WorkspaceLayout
+              patient={activePatient}
+              activeReport={activeReport}
+              onSelectReport={handleSelectReport}
+              onVerifyTest={handleVerifyTest}
+              onOpenNewPatient={() => setIsNewPatientOpen(true)}
+              onOpenUpload={() => setIsUploadOpen(true)}
+              conflicts={conflicts}
+              onOpenConflictsModal={() => setIsConflictModalOpen(true)}
+            />
+          ) : currentTab === 'patients' ? (
+            <PatientsView
+              patients={patients}
+              onSelectPatient={id => {
+                handleSelectPatient(id);
+                setCurrentTab('workspace');
+              }}
+              onViewProfile={handleViewPatientProfile}
+              onOpenNewPatient={() => setIsNewPatientOpen(true)}
+            />
+          ) : currentTab === 'timeline' ? (
+            <TimelineView
+              events={activePatient ? MedicalService.getPatientTimeline(activePatient.id) : []}
+              patientName={activePatient?.name || 'No Patient Active'}
+              onOpenReport={handleSelectReport}
+            />
+          ) : currentTab === 'compare' ? (
+            <ComparisonView
+              patient={activePatient}
+              onOpenReport={handleSelectReport}
+            />
+          ) : currentTab === 'verification-center' ? (
+            <VerificationCenterView
+              patient={activePatient}
+              onVerifyTest={handleVerifyTest}
+              onOpenWorkspace={(reportId) => {
+                setActiveReportId(reportId);
+                setCurrentTab('workspace');
+              }}
+            />
+          ) : currentTab === 'conflict-center' ? (
+            <ConflictCenterView
+              patient={activePatient}
+              conflicts={conflicts}
+              onResolveConflict={handleResolveConflict}
+            />
+          ) : currentTab === 'audit-trail' ? (
+            <AuditTrailView
+              auditEvents={MedicalService.getAuditTrail()}
+              patientName={activePatient?.name || 'All Patients'}
+            />
+          ) : currentTab === 'report-studio' ? (
+            <ReportStudioView patient={activePatient} />
+          ) : currentTab === 'settings' ? (
+            <SettingsView onResetDemoData={handleResetDemoData} />
+          ) : null}
+        </div>
+      </div>
+
+      {/* Register New Patient Modal */}
+      <NewPatientModal
+        isOpen={isNewPatientOpen}
+        onClose={() => setIsNewPatientOpen(false)}
+        onCreatePatient={handleCreatePatient}
+      />
+
+      {/* Upload Document Modal with Section 3 Pipeline Stepper */}
+      <UploadModal
+        isOpen={isUploadOpen}
+        onClose={() => setIsUploadOpen(false)}
+        onUploadSuccess={handleUploadSuccess}
+        patients={patients}
+        activePatient={activePatient}
+      />
+
+      {/* Medical JSON Inspection Modal */}
+      <MedicalJSONModal
+        isOpen={isJSONModalOpen}
+        onClose={() => setIsJSONModalOpen(false)}
+        data={jsonExportData}
+      />
+
+      {/* Conflict Review Modal (Section 13) */}
+      <ConflictModal
+        isOpen={isConflictModalOpen}
+        onClose={() => setIsConflictModalOpen(false)}
+        conflicts={conflicts.filter(c => !c.isResolved)}
+        onResolveConflict={handleResolveConflict}
+      />
+    </div>
+  );
+};

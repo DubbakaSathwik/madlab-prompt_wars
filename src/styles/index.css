@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-[#F8FAFB] text-slate-800 antialiased font-sans;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+/* Custom subtle scrollbar for clinical panels */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Status badges & text compliance */
+.badge-status-low {
+  @apply bg-amber-50 text-amber-800 border border-amber-200;
+}
+
+.badge-status-normal {
+  @apply bg-emerald-50 text-emerald-800 border border-emerald-200;
+}
+
+.badge-status-high {
+  @apply bg-rose-50 text-rose-800 border border-rose-200;
+}
+
+.badge-status-unknown {
+  @apply bg-slate-100 text-slate-700 border border-slate-200;
+}
+
+/* Printable report styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+}
