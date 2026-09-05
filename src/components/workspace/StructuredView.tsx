@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ClinicalReport, LabResult, InconsistencyConflict } from '../../types/medical';
 import { StructuredResult } from './StructuredResult';
-import { Search, Filter, AlertTriangle, CheckCircle2, SlidersHorizontal, ShieldAlert, ArrowRight } from 'lucide-react';
+import { Search, Filter, AlertTriangle, CheckCircle2, SlidersHorizontal, ShieldAlert, ArrowRight, Plus } from 'lucide-react';
 
 interface StructuredViewProps {
   report: ClinicalReport;
@@ -16,6 +16,7 @@ interface StructuredViewProps {
   onAskAIAboutTest: (test: LabResult) => void;
   conflicts?: InconsistencyConflict[];
   onOpenConflictsModal?: () => void;
+  onOpenAddTest?: () => void;
 }
 
 export const StructuredView: React.FC<StructuredViewProps> = ({
@@ -26,7 +27,8 @@ export const StructuredView: React.FC<StructuredViewProps> = ({
   onVerifyTest,
   onAskAIAboutTest,
   conflicts = [],
-  onOpenConflictsModal
+  onOpenConflictsModal,
+  onOpenAddTest
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'ALL' | 'OUTSIDE_RANGE' | 'NEEDS_REVIEW' | 'NORMAL' | 'LOW' | 'HIGH'>('ALL');
@@ -213,6 +215,17 @@ export const StructuredView: React.FC<StructuredViewProps> = ({
             >
               <SlidersHorizontal className="w-4 h-4" />
             </button>
+
+            {onOpenAddTest && (
+              <button
+                onClick={onOpenAddTest}
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold bg-[#218DAE] hover:bg-[#186d88] text-white shadow-2xs transition-colors cursor-pointer shrink-0 ml-1"
+                title="Add a new biomarker or lab test"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ Add Biomarker</span>
+              </button>
+            )}
           </div>
         </div>
 

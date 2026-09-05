@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { AuthService } from './services/authService';
 import { MedicalService } from './services/medicalService';
 import { AuthState, UserRole } from './types/auth';
-import { Patient, ClinicalReport, MedicalJSONRoot, InconsistencyConflict } from './types/medical';
+import { FileStorageService } from './services/fileStorageService';
+import { Patient, ClinicalReport, MedicalJSONRoot, InconsistencyConflict, LabResult } from './types/medical';
 
 // Components
 import { IntroSplash } from './components/onboarding/IntroSplash';
@@ -26,12 +27,11 @@ import { UploadModal } from './components/views/UploadModal';
 import { MedicalJSONModal } from './components/views/MedicalJSONModal';
 import { ConflictModal } from './components/views/ConflictModal';
 import { NewPatientModal } from './components/views/NewPatientModal';
+import { AddClinicalDataModal, ClinicalEntryType } from './components/views/AddClinicalDataModal';
 
 export const App: React.FC = () => {
-  // Onboarding Intro Splash State
-  const [showIntro, setShowIntro] = useState<boolean>(() => {
-    return !sessionStorage.getItem('medlens_intro_viewed');
-  });
+  // Onboarding Intro Splash State (Task 2: Triggers on every reload)
+  const [showIntro, setShowIntro] = useState<boolean>(true);
 
   // Auth State
   const [authState, setAuthState] = useState<AuthState>(() => AuthService.init());
@@ -54,6 +54,8 @@ export const App: React.FC = () => {
   const [isNewPatientOpen, setIsNewPatientOpen] = useState(false);
   const [isJSONModalOpen, setIsJSONModalOpen] = useState(false);
   const [isConflictModalOpen, setIsConflictModalOpen] = useState(false);
+  const [isAddClinicalModalOpen, setIsAddClinicalModalOpen] = useState(false);
+  const [addClinicalInitialType, setAddClinicalInitialType] = useState<ClinicalEntryType>('TEST');
   const [jsonExportData, setJsonExportData] = useState<MedicalJSONRoot | null>(null);
   const [conflicts, setConflicts] = useState<InconsistencyConflict[]>([]);
 
@@ -81,7 +83,46 @@ export const App: React.FC = () => {
 
   const handleFinishIntro = () => {
     setShowIntro(false);
-    sessionStorage.setItem('medlens_intro_viewed', 'true');
+  };
+
+  // Report Deletion Handler (Task 1)
+  const handleDeleteReport = (reportId: string) => {
+    if (!activePatient) return;
+    MedicalService.deleteReport(activePatient.id, reportId);
+    FileStorageService.removeFile(reportId);
+    const updated = MedicalService.getPatients();
+    setPatients([...updated]);
+    const currentPat = updated.find(p => p.id === activePatient.id);
+    if (currentPat) {
+      if (activeReportId === reportId) {
+        setActiveReportId(currentPat.reports[0]?.id || '');
+      }
+    }
+  };
+
+  // Add Clinical Entry Handlers (Task 7)
+  const handleAddTest = (test: LabResult) => {
+    if (!activePatient || !activeReport) return;
+    MedicalService.addOrUpdateTest(activePatient.id, activeReport.id, test);
+    setPatients([...MedicalService.getPatients()]);
+  };
+
+  const handleAddAllergy = (allergy: any) => {
+    if (!activePatient) return;
+    MedicalService.addAllergy(activePatient.id, allergy);
+    setPatients([...MedicalService.getPatients()]);
+  };
+
+  const handleAddCondition = (condition: any) => {
+    if (!activePatient) return;
+    MedicalService.addCondition(activePatient.id, condition);
+    setPatients([...MedicalService.getPatients()]);
+  };
+
+  const handleAddMedication = (medication: any) => {
+    if (!activePatient) return;
+    MedicalService.addMedication(activePatient.id, medication);
+    setPatients([...MedicalService.getPatients()]);
   };
 
   // Auth Handlers
@@ -363,6 +404,11 @@ export const App: React.FC = () => {
               onVerifyTest={handleVerifyTest}
               onOpenNewPatient={() => setIsNewPatientOpen(true)}
               onOpenUpload={() => setIsUploadOpen(true)}
+              onDeleteReport={handleDeleteReport}
+              onOpenAddClinicalModal={(type) => {
+                if (type) setAddClinicalInitialType(type);
+                setIsAddClinicalModalOpen(true);
+              }}
               conflicts={conflicts}
               onOpenConflictsModal={() => setIsConflictModalOpen(true)}
             />
@@ -414,6 +460,19 @@ export const App: React.FC = () => {
           ) : null}
         </div>
       </div>
+
+      {/* Add Clinical Data & AI Confirmation Modal (Task 7) */}
+      <AddClinicalDataModal
+        isOpen={isAddClinicalModalOpen}
+        onClose={() => setIsAddClinicalModalOpen(false)}
+        patient={activePatient}
+        activeReport={activeReport}
+        initialType={addClinicalInitialType}
+        onAddTest={handleAddTest}
+        onAddAllergy={handleAddAllergy}
+        onAddCondition={handleAddCondition}
+        onAddMedication={handleAddMedication}
+      />
 
       {/* Register New Patient Modal */}
       <NewPatientModal

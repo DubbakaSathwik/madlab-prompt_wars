@@ -21,13 +21,17 @@ interface AIAssistantProps {
   activeReport?: ClinicalReport;
   selectedTest?: LabResult;
   onClearSelectedTest?: () => void;
+  autoQuery?: { id: string; prompt: string } | null;
+  onClearAutoQuery?: () => void;
 }
 
 export const AIAssistant: React.FC<AIAssistantProps> = ({
   patient,
   activeReport,
   selectedTest,
-  onClearSelectedTest
+  onClearSelectedTest,
+  autoQuery,
+  onClearAutoQuery
 }) => {
   const [messages, setMessages] = useState<AIMessage[]>([
     {
@@ -37,7 +41,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
       structuredResponse: {
         record: `Patient record active: ${patient.name} (${patient.patientId}) · ${patient.reports.length} Clinical Reports loaded into Medical JSON.`,
         source: `Active Context: ${activeReport?.sourceDocument || 'Laboratory Record'}`,
-        explanation: `I am connected to the patient's structured records, reference ranges, and provenance metadata. I organize and explain documented information without formulating clinical diagnoses.`,
+        explanation: `I am MedLabs AI, connected to your extracted clinical records, reference ranges, and provenance metadata. I can explain documented test findings and answer your questions without formulating clinical diagnoses.`,
         note: `MedLens is strictly informational. Always discuss specific lab results and medical decisions with a qualified healthcare professional.`
       },
       suggestedFollowUps: [
@@ -59,6 +63,14 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({
   useEffect(() => {
     scrollToBottom();
   }, [messages, isTyping]);
+
+  // Handle incoming automated query from the "Ask AI" button on test items (Task 6)
+  useEffect(() => {
+    if (autoQuery && autoQuery.prompt) {
+      handleSend(autoQuery.prompt);
+      onClearAutoQuery?.();
+    }
+  }, [autoQuery?.id]);
 
   const handleSend = async (queryText?: string) => {
     const textToSend = (queryText || inputQuery).trim();

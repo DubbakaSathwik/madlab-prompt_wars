@@ -18,6 +18,8 @@ interface WorkspaceLayoutProps {
   onOpenConflictsModal?: () => void;
   onOpenUpload?: () => void;
   onOpenNewPatient?: () => void;
+  onDeleteReport?: (reportId: string) => void;
+  onOpenAddClinicalModal?: (type?: 'TEST' | 'ALLERGY' | 'CONDITION' | 'MEDICATION') => void;
 }
 
 export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({
@@ -28,11 +30,14 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({
   conflicts = [],
   onOpenConflictsModal,
   onOpenUpload,
-  onOpenNewPatient
+  onOpenNewPatient,
+  onDeleteReport,
+  onOpenAddClinicalModal
 }) => {
   const [selectedTestId, setSelectedTestId] = useState<string | undefined>(
     activeReport?.tests[0]?.id
   );
+  const [autoQuery, setAutoQuery] = useState<{ id: string; prompt: string } | null>(null);
 
   // Mobile Tab View State ('patient' | 'workspace' | 'assistant')
   const [mobileTab, setMobileTab] = useState<'patient' | 'workspace' | 'assistant'>('workspace');
@@ -78,6 +83,10 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({
   const handleAskAIAboutTest = (test: LabResult) => {
     setSelectedTestId(test.id);
     setMobileTab('assistant');
+    setAutoQuery({
+      id: `${test.id}-${Date.now()}`,
+      prompt: `Please explain my ${test.testName} test. The report shows a value of ${test.value} ${test.unit} with reference range ${test.referenceRange.rawText} (${test.status}). How does this compare with the normal reference range?`
+    });
   };
 
   return (
@@ -131,6 +140,8 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({
               setSelectedTestId(undefined);
               setMobileTab('workspace');
             }}
+            onDeleteReport={onDeleteReport}
+            onOpenAddClinicalModal={onOpenAddClinicalModal}
           />
         </div>
 
@@ -150,6 +161,7 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({
               onAskAIAboutTest={handleAskAIAboutTest}
               conflicts={conflicts}
               onOpenConflictsModal={onOpenConflictsModal}
+              onOpenAddTest={onOpenAddClinicalModal ? () => onOpenAddClinicalModal('TEST') : undefined}
             />
           ) : (
             <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center bg-white">
@@ -184,6 +196,8 @@ export const WorkspaceLayout: React.FC<WorkspaceLayoutProps> = ({
             activeReport={activeReport}
             selectedTest={selectedTest}
             onClearSelectedTest={() => setSelectedTestId(undefined)}
+            autoQuery={autoQuery}
+            onClearAutoQuery={() => setAutoQuery(null)}
           />
         </div>
       </div>

@@ -135,6 +135,89 @@ export class MedicalService {
     this.persist();
   }
 
+  static deleteReport(patientId: string, reportId: string): void {
+    if (!this.isInitialized) this.init();
+    const patient = this.getPatientById(patientId);
+    if (patient) {
+      const targetReport = patient.reports.find(r => r.id === reportId);
+      patient.reports = patient.reports.filter(r => r.id !== reportId);
+      this.addAuditEvent({
+        id: `aud-rep-del-${Date.now()}`,
+        timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19),
+        action: 'Report Deleted',
+        actor: 'User / Clinician',
+        details: `Deleted report "${targetReport?.reportName || reportId}" from patient ${patient.name}`,
+        patientId: patient.id,
+        reportId
+      });
+      this.persist();
+    }
+  }
+
+  static addOrUpdateTest(patientId: string, reportId: string, test: LabResult): void {
+    if (!this.isInitialized) this.init();
+    const patient = this.getPatientById(patientId);
+    if (patient) {
+      const report = patient.reports.find(r => r.id === reportId);
+      if (report) {
+        const existingIdx = report.tests.findIndex(t => t.id === test.id);
+        if (existingIdx >= 0) {
+          report.tests[existingIdx] = test;
+        } else {
+          report.tests.push(test);
+        }
+        const needsReview = report.tests.filter(
+          t => t.verification.status === 'NEEDS_REVIEW' || t.verification.status === 'LOW_CONFIDENCE'
+        ).length;
+        const verified = report.tests.filter(t => t.verification.status === 'VERIFIED').length;
+        const rejected = report.tests.filter(t => t.verification.status === 'REJECTED').length;
+        report.verificationSummary = {
+          total: report.tests.length,
+          verified,
+          needsReview,
+          rejected
+        };
+        this.addAuditEvent({
+          id: `aud-test-edit-${Date.now()}`,
+          timestamp: new Date().toISOString().replace('T', ' ').slice(0, 19),
+          action: existingIdx >= 0 ? 'Biomarker Updated' : 'Biomarker Added',
+          actor: 'User / Clinician (AI Validated)',
+          details: `${existingIdx >= 0 ? 'Updated' : 'Added'} test parameter "${test.testName}" (${test.value} ${test.unit}) in report ${report.reportName}`,
+          patientId: patient.id,
+          reportId
+        });
+        this.persist();
+      }
+    }
+  }
+
+  static addAllergy(patientId: string, allergy: any): void {
+    if (!this.isInitialized) this.init();
+    const patient = this.getPatientById(patientId);
+    if (patient) {
+      patient.allergies.push(allergy);
+      this.persist();
+    }
+  }
+
+  static addCondition(patientId: string, condition: any): void {
+    if (!this.isInitialized) this.init();
+    const patient = this.getPatientById(patientId);
+    if (patient) {
+      patient.conditions.push(condition);
+      this.persist();
+    }
+  }
+
+  static addMedication(patientId: string, medication: any): void {
+    if (!this.isInitialized) this.init();
+    const patient = this.getPatientById(patientId);
+    if (patient) {
+      patient.medications.push(medication);
+      this.persist();
+    }
+  }
+
   static clearAllData(): void {
     this.patients = [];
     this.auditTrail = [];

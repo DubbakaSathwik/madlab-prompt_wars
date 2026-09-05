@@ -5,6 +5,7 @@ import {
   StructuredAIResponse, 
   StructuredClinicalSummary 
 } from '../types/medical';
+import { GeminiService } from './geminiService';
 
 export class AIService {
   /**
@@ -85,15 +86,48 @@ export class AIService {
     followUps: string[];
     structuredSummary?: StructuredClinicalSummary;
   }> {
-    await new Promise(resolve => setTimeout(resolve, 500));
+    await new Promise(resolve => setTimeout(resolve, 400));
 
     const lower = userMessage.toLowerCase().trim();
     const activeRep = currentReport || currentPatient.reports[0];
 
     // =========================================================================
+    // 1. DYNAMIC MEDLABS AI VIA GOOGLE GEMINI (Task 3)
+    // =========================================================================
+    // If user explicitly asks for "generate summary", run the deterministic engine
+    const isSummaryRequest = lower.includes('generate summary') || lower.includes('structured summary') || lower.includes('clinical summary');
+
+    if (!isSummaryRequest && GeminiService.hasApiKey()) {
+      try {
+        const geminiRes = await GeminiService.askMedLabsAI({
+          userMessage,
+          patient: currentPatient,
+          activeReport: activeRep,
+          selectedTest
+        });
+
+        return {
+          response: {
+            record: geminiRes.record,
+            source: geminiRes.source,
+            explanation: geminiRes.explanation,
+            note: geminiRes.note,
+            isMedicationWarning: geminiRes.isMedicationWarning,
+            isGreeting: geminiRes.isGreeting
+          },
+          followUps: geminiRes.followUps && geminiRes.followUps.length > 0
+            ? geminiRes.followUps
+            : ['Explain my latest report.', 'Which results are outside reference ranges?', 'What should I ask my doctor?']
+        };
+      } catch (geminiErr) {
+        console.warn('[AIService] Gemini AI assistant failed, using local clinical rules:', geminiErr);
+      }
+    }
+
+    // =========================================================================
     // FEATURE: "Generate Structured Summary"
     // =========================================================================
-    if (lower.includes('generate summary') || lower.includes('structured summary') || lower.includes('clinical summary')) {
+    if (isSummaryRequest) {
       const prevRep = currentPatient.reports.find(r => r.id !== activeRep.id);
       const summary = this.generateSummary(currentPatient, activeRep, prevRep);
 
@@ -114,6 +148,27 @@ export class AIService {
     }
 
     // =========================================================================
+    // GREETINGS & CASUAL CONVERSATION (Task 3)
+    // =========================================================================
+    if (/^(hi|hello|hey|greetings|good\s+(morning|afternoon|evening)|howdy)\b/i.test(lower) || lower === 'hi' || lower === 'hello' || lower === 'hey') {
+      return {
+        response: {
+          record: `Patient Profile Active: ${currentPatient.name} (${currentPatient.patientId})`,
+          source: 'MedLabs Clinical Assistant',
+          explanation: `Hello! I am MedLabs AI, your medical report assistant. I am connected to your extracted medical records, laboratory values, and clinical history. How can I help you understand your health reports today?`,
+          note: 'MedLabs AI provides educational information grounded in your clinical documents. It does not provide medical diagnoses or replace physician consultations.',
+          isGreeting: true,
+          isMedicationWarning: false
+        },
+        followUps: [
+          'Explain my latest report.',
+          'Which results are outside the provided reference ranges?',
+          'What should I ask my doctor?'
+        ]
+      };
+    }
+
+    // =========================================================================
     // SECTION 22: DIAGNOSIS QUESTIONS ("Do I have diabetes?", "Do I have anemia?")
     // =========================================================================
     if (
@@ -126,15 +181,9 @@ export class AIService {
       lower.includes('have anemia') ||
       lower.includes('have diabetes')
     ) {
-      const conditionName = lower.includes('diabetes') 
-        ? 'diabetes' 
-        : lower.includes('anemia') 
-        ? 'anemia' 
-        : 'a medical diagnosis';
-
       return {
         response: {
-          record: `The available records contain certain documented results (for example, Hemoglobin at 11.2 g/dL with laboratory range 13.0–17.0 g/dL, and fasting glucose metrics in your chart history).`,
+          record: `The available records contain certain documented results (for example, Hemoglobin at 11.2 g/dL with laboratory range 13.0–17.0 g/dL, and glucose metrics in your chart history).`,
           source: `${activeRep.sourceDocument} · Complete Blood Count & Chemistry Sections`,
           explanation: `In clinical medicine, laboratory values are biomarkers that must be correlated with physical symptoms, clinical history, and physician assessment to determine pathology. MedLens cannot determine or confirm a diagnosis.`,
           note: `The available records contain certain documented results, but MedLens cannot determine or confirm a diagnosis. A qualified healthcare professional should interpret these results in clinical context.`
@@ -148,16 +197,19 @@ export class AIService {
     }
 
     // =========================================================================
-    // SECTION 23: MEDICATION & TREATMENT QUESTIONS
+    // SECTION 23: MEDICATION & TREATMENT QUESTIONS (Task 3 - Red Warning Note)
     // =========================================================================
     if (
       lower.includes('what medicine') ||
       lower.includes('should i take') ||
+      lower.includes('tablet') ||
+      lower.includes('pill') ||
       lower.includes('dosage') ||
       lower.includes('prescribe') ||
       lower.includes('stop taking') ||
       lower.includes('cure') ||
-      lower.includes('treatment')
+      lower.includes('treatment') ||
+      lower.includes('what tablet')
     ) {
       const recordedMeds = currentPatient.medications.length > 0
         ? currentPatient.medications.map(m => `${m.name} (${m.dosage}, ${m.frequency})`).join('; ')
@@ -166,9 +218,10 @@ export class AIService {
       return {
         response: {
           record: `Your documented chart lists the following active prescription orders: ${recordedMeds}.`,
-          source: `Patient Medical Context Profile & St. Jude Pharmacy Prescription Order (2026-08-30)`,
-          explanation: `MedLens cannot recommend treatment or medication changes. Prescriptions, supplemental therapies, and dosage adjustments require authorized clinical evaluation and drug interaction screening.`,
-          note: `MedLens strictly cannot recommend treatment, prescribe medications, or advise stopping current therapies. Consult your prescribing physician or pharmacist before making any medication decisions.`
+          source: `Patient Medical Context Profile`,
+          explanation: `Prescription therapies, supplemental medications, and dosage changes require direct physician consultation and clinical interaction screening. MedLabs AI cannot prescribe drugs or recommend specific treatments.`,
+          note: `⚠️ Medical Disclaimer: This response is generated by MedLabs AI for educational purposes only. Do not take, start, stop, or alter any medication without directly consulting your licensed doctor or healthcare professional.`,
+          isMedicationWarning: true
         },
         followUps: [
           'What should I ask my doctor about my medications?',
@@ -379,6 +432,39 @@ export class AIService {
         followUps: [
           'Generate a structured clinical summary.',
           'What changed from my previous report?',
+          'Explain my latest report.'
+        ]
+      };
+    }
+
+    // =========================================================================
+    // BIOMARKER LOOKUP & AUTOMATIC VALUE COMPARISON (Task 3 & 6)
+    // =========================================================================
+    const testToEvaluate = selectedTest || activeRep.tests.find(t => {
+      const tName = t.testName.toLowerCase();
+      return lower.includes(tName) || 
+        (lower.includes('bp') && (tName.includes('blood pressure') || tName.includes('bp'))) ||
+        (lower.includes('sugar') && tName.includes('glucose')) ||
+        (lower.includes('glucose') && tName.includes('glucose'));
+    });
+
+    if (testToEvaluate) {
+      const isNormal = testToEvaluate.status === 'NORMAL';
+      const statusComparison = isNormal
+        ? `within the laboratory's documented reference range of ${testToEvaluate.referenceRange.rawText}`
+        : `outside the normal interval (${testToEvaluate.status.toLowerCase()} relative to ${testToEvaluate.referenceRange.rawText})`;
+
+      return {
+        response: {
+          record: `Biomarker Record: ${testToEvaluate.testName}\n• Value: ${testToEvaluate.value} ${testToEvaluate.unit}\n• Reference Interval: ${testToEvaluate.referenceRange.rawText}\n• Status: ${testToEvaluate.status}\n• Document: ${activeRep.reportName} (p. ${testToEvaluate.provenance.page})`,
+          source: `${testToEvaluate.provenance.sourceDocument || activeRep.sourceDocument} · Page ${testToEvaluate.provenance.page}`,
+          explanation: `Your recorded ${testToEvaluate.testName} is ${testToEvaluate.value} ${testToEvaluate.unit}. When compared against the testing facility's reference range (${testToEvaluate.referenceRange.rawText}), this measurement is ${statusComparison}. Extraction confidence is ${testToEvaluate.provenance.confidence}%.`,
+          note: `MedLabs AI provides objective report data extraction. Always consult your attending physician to evaluate the clinical significance of these numbers.`,
+          isMedicationWarning: false
+        },
+        followUps: [
+          `Why is it ${testToEvaluate.status.toLowerCase()}?`,
+          'What questions should I ask my doctor?',
           'Explain my latest report.'
         ]
       };

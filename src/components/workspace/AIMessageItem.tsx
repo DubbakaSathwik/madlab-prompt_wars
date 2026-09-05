@@ -118,30 +118,51 @@ export const AIMessageItem: React.FC<AIMessageItemProps> = ({
           </div>
         )}
 
+        {/* Conversational Greeting / Welcome */}
+        {structured && !summary && structured.isGreeting && (
+          <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-4 md:p-5 space-y-3">
+            <p className="text-slate-800 leading-relaxed text-sm md:text-base font-medium">
+              {structured.explanation}
+            </p>
+            {structured.record && (
+              <div className="text-xs font-mono text-slate-500 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200 inline-block">
+                {structured.record}
+              </div>
+            )}
+            <div className="p-3 rounded-xl bg-slate-50 border-l-4 border-[#218DAE] text-xs text-slate-600">
+              {structured.note}
+            </div>
+          </div>
+        )}
+
         {/* Standard 4-Tier Structured Response */}
-        {structured && !summary && (
+        {structured && !summary && !structured.isGreeting && (
           <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-4 md:p-5 space-y-3.5">
             {/* 1. RECORD FACT */}
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-2 text-xs font-black text-slate-500 uppercase tracking-wider">
-                <FileText className="w-4 h-4 text-[#218DAE]" />
-                <span>Documented Findings</span>
+            {structured.record && (
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2 text-xs font-black text-slate-500 uppercase tracking-wider">
+                  <FileText className="w-4 h-4 text-[#218DAE]" />
+                  <span>Documented Findings</span>
+                </div>
+                <p className="text-slate-800 font-medium leading-relaxed whitespace-pre-wrap bg-slate-50 p-3.5 rounded-xl border border-slate-200/60 text-sm md:text-base">
+                  {structured.record}
+                </p>
               </div>
-              <p className="text-slate-800 font-medium leading-relaxed whitespace-pre-wrap bg-slate-50 p-3.5 rounded-xl border border-slate-200/60 text-sm md:text-base">
-                {structured.record}
-              </p>
-            </div>
+            )}
 
             {/* 2. SOURCE PROVENANCE */}
-            <div className="space-y-1.5">
-              <div className="flex items-center gap-2 text-xs font-black text-slate-500 uppercase tracking-wider">
-                <CheckCircle2 className="w-4 h-4 text-[#2BBBD7]" />
-                <span>Source Citation</span>
+            {structured.source && (
+              <div className="space-y-1.5">
+                <div className="flex items-center gap-2 text-xs font-black text-slate-500 uppercase tracking-wider">
+                  <CheckCircle2 className="w-4 h-4 text-[#2BBBD7]" />
+                  <span>Source Citation</span>
+                </div>
+                <p className="text-xs md:text-sm font-mono font-medium text-slate-700 bg-[#eaf9fc] p-3 rounded-xl border border-[#2BBBD7]/40 leading-relaxed">
+                  {structured.source}
+                </p>
               </div>
-              <p className="text-xs md:text-sm font-mono font-medium text-slate-700 bg-[#eaf9fc] p-3 rounded-xl border border-[#2BBBD7]/40 leading-relaxed">
-                {structured.source}
-              </p>
-            </div>
+            )}
 
             {/* 3. GENERAL EXPLANATION */}
             <div className="space-y-1.5">
@@ -154,14 +175,26 @@ export const AIMessageItem: React.FC<AIMessageItemProps> = ({
               </p>
             </div>
 
-            {/* 4. SAFE GUIDANCE */}
-            <div className="p-3.5 rounded-xl bg-[#e8f4f8] border-l-4 border-[#218DAE] text-xs md:text-sm text-slate-700 flex items-start gap-2.5">
-              <ShieldAlert className="w-4 h-4 text-[#218DAE] shrink-0 mt-0.5" />
+            {/* 4. SAFE GUIDANCE (Prominent Red Warning for Medication Questions - Task 3) */}
+            <div className={`p-4 rounded-xl border-l-4 text-xs md:text-sm flex items-start gap-3 ${
+              structured.isMedicationWarning 
+                ? 'bg-rose-50 border-rose-600 text-rose-950 shadow-xs' 
+                : 'bg-[#e8f4f8] border-[#218DAE] text-slate-700'
+            }`}>
+              <ShieldAlert className={`w-5 h-5 shrink-0 mt-0.5 ${
+                structured.isMedicationWarning ? 'text-rose-600' : 'text-[#218DAE]'
+              }`} />
               <div className="space-y-1">
-                <span className="font-extrabold text-[#186d88] uppercase tracking-wider text-xs block">
-                  Physician Guidance Note
+                <span className={`font-extrabold uppercase tracking-wider text-xs block ${
+                  structured.isMedicationWarning ? 'text-rose-700' : 'text-[#186d88]'
+                }`}>
+                  {structured.isMedicationWarning ? '⚠️ Important Medication Notice' : 'Physician Guidance Note'}
                 </span>
-                <p className="leading-relaxed whitespace-pre-wrap text-sm md:text-base font-medium">{structured.note}</p>
+                <p className={`leading-relaxed whitespace-pre-wrap text-sm md:text-base ${
+                  structured.isMedicationWarning ? 'font-bold text-rose-900' : 'font-medium'
+                }`}>
+                  {structured.note}
+                </p>
               </div>
             </div>
           </div>

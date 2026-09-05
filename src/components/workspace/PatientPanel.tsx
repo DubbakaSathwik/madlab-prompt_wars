@@ -8,7 +8,9 @@ import {
   Calendar,
   Sparkles,
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  Trash2,
+  Plus
 } from 'lucide-react';
 import { Patient, ClinicalReport, SourceCategory } from '../../types/medical';
 
@@ -16,12 +18,16 @@ interface PatientPanelProps {
   patient: Patient;
   activeReportId?: string;
   onSelectReport: (reportId: string) => void;
+  onDeleteReport?: (reportId: string) => void;
+  onOpenAddClinicalModal?: (type?: 'TEST' | 'ALLERGY' | 'CONDITION' | 'MEDICATION') => void;
 }
 
 export const PatientPanel: React.FC<PatientPanelProps> = ({
   patient,
   activeReportId,
-  onSelectReport
+  onSelectReport,
+  onDeleteReport,
+  onOpenAddClinicalModal
 }) => {
   const renderSourceBadge = (source: SourceCategory) => {
     switch (source) {
@@ -106,6 +112,17 @@ export const PatientPanel: React.FC<PatientPanelProps> = ({
               <FileText className="w-4 h-4 text-[#218DAE]" />
               <span>Patient Reports ({patient.reports.length})</span>
             </h3>
+            {onOpenAddClinicalModal && (
+              <button
+                type="button"
+                onClick={() => onOpenAddClinicalModal('TEST')}
+                className="inline-flex items-center gap-1 text-xs font-bold text-[#186d88] hover:text-[#218DAE] hover:underline cursor-pointer"
+                title="Add custom biomarker test to this report"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add Test</span>
+              </button>
+            )}
           </div>
           <div className="space-y-2">
             {patient.reports.length === 0 ? (
@@ -117,22 +134,40 @@ export const PatientPanel: React.FC<PatientPanelProps> = ({
                 const isSelected = report.id === activeReportId;
                 const hasReview = report.verificationSummary.needsReview > 0;
                 return (
-                  <button
+                  <div
                     key={report.id}
                     onClick={() => onSelectReport(report.id)}
-                    className={`w-full text-left p-3.5 rounded-2xl border transition-all cursor-pointer ${
+                    className={`group w-full text-left p-3.5 rounded-2xl border transition-all cursor-pointer relative ${
                       isSelected
                         ? 'border-[#218DAE] bg-[#e8f4f8]/90 text-[#186d88] shadow-xs ring-1 ring-[#218DAE]/30'
                         : 'border-slate-200 hover:border-slate-300 bg-white hover:bg-slate-50 text-slate-700 shadow-2xs'
                     }`}
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <span className="font-bold text-sm text-slate-900 truncate">
+                      <span className="font-bold text-sm text-slate-900 truncate pr-2">
                         {report.reportName}
                       </span>
-                      <span className="text-xs text-slate-400 shrink-0 font-mono font-semibold">
-                        {report.date}
-                      </span>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <span className="text-xs text-slate-400 font-mono font-semibold">
+                          {report.date}
+                        </span>
+                        {onDeleteReport && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (window.confirm(`Are you sure you want to delete report "${report.reportName}"? This will remove all associated test extractions.`)) {
+                                onDeleteReport(report.id);
+                              }
+                            }}
+                            className="p-1 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                            title="Delete this report"
+                            aria-label={`Delete ${report.reportName}`}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                     <div className="flex items-center justify-between mt-2 text-xs text-slate-500 font-medium">
                       <span>{report.tests.length} biomarkers</span>
@@ -146,7 +181,7 @@ export const PatientPanel: React.FC<PatientPanelProps> = ({
                         </span>
                       )}
                     </div>
-                  </button>
+                  </div>
                 );
               })
             )}
@@ -155,10 +190,23 @@ export const PatientPanel: React.FC<PatientPanelProps> = ({
 
         {/* Known Allergies */}
         <section>
-          <h3 className="text-xs md:text-sm font-black text-slate-500 uppercase tracking-wider flex items-center gap-2 mb-2.5">
-            <AlertCircle className="w-4 h-4 text-rose-500" />
-            <span>Documented Allergies ({patient.allergies.length})</span>
-          </h3>
+          <div className="flex items-center justify-between mb-2.5">
+            <h3 className="text-xs md:text-sm font-black text-slate-500 uppercase tracking-wider flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-rose-500" />
+              <span>Documented Allergies ({patient.allergies.length})</span>
+            </h3>
+            {onOpenAddClinicalModal && (
+              <button
+                type="button"
+                onClick={() => onOpenAddClinicalModal('ALLERGY')}
+                className="inline-flex items-center gap-1 text-xs font-bold text-rose-700 hover:text-rose-800 hover:underline cursor-pointer"
+                title="Add documented allergy"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add</span>
+              </button>
+            )}
+          </div>
           {patient.allergies.length > 0 ? (
             <div className="space-y-2">
               {patient.allergies.map(alg => (
@@ -185,10 +233,23 @@ export const PatientPanel: React.FC<PatientPanelProps> = ({
 
         {/* Existing Conditions */}
         <section>
-          <h3 className="text-xs md:text-sm font-black text-slate-500 uppercase tracking-wider flex items-center gap-2 mb-2.5">
-            <Activity className="w-4 h-4 text-[#218DAE]" />
-            <span>Active Conditions ({patient.conditions.length})</span>
-          </h3>
+          <div className="flex items-center justify-between mb-2.5">
+            <h3 className="text-xs md:text-sm font-black text-slate-500 uppercase tracking-wider flex items-center gap-2">
+              <Activity className="w-4 h-4 text-[#218DAE]" />
+              <span>Active Conditions ({patient.conditions.length})</span>
+            </h3>
+            {onOpenAddClinicalModal && (
+              <button
+                type="button"
+                onClick={() => onOpenAddClinicalModal('CONDITION')}
+                className="inline-flex items-center gap-1 text-xs font-bold text-[#186d88] hover:text-[#218DAE] hover:underline cursor-pointer"
+                title="Add documented condition"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add</span>
+              </button>
+            )}
+          </div>
           <div className="space-y-2">
             {patient.conditions.map(cnd => (
               <div key={cnd.id} className="p-3 rounded-xl bg-slate-50/90 border border-slate-200/80">
@@ -215,10 +276,23 @@ export const PatientPanel: React.FC<PatientPanelProps> = ({
 
         {/* Current Medications */}
         <section>
-          <h3 className="text-xs md:text-sm font-black text-slate-500 uppercase tracking-wider flex items-center gap-2 mb-2.5">
-            <Pill className="w-4 h-4 text-[#218DAE]" />
-            <span>Current Medications ({patient.medications.length})</span>
-          </h3>
+          <div className="flex items-center justify-between mb-2.5">
+            <h3 className="text-xs md:text-sm font-black text-slate-500 uppercase tracking-wider flex items-center gap-2">
+              <Pill className="w-4 h-4 text-[#218DAE]" />
+              <span>Current Medications ({patient.medications.length})</span>
+            </h3>
+            {onOpenAddClinicalModal && (
+              <button
+                type="button"
+                onClick={() => onOpenAddClinicalModal('MEDICATION')}
+                className="inline-flex items-center gap-1 text-xs font-bold text-[#186d88] hover:text-[#218DAE] hover:underline cursor-pointer"
+                title="Add documented medication"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Add</span>
+              </button>
+            )}
+          </div>
           <div className="space-y-2">
             {patient.medications.map(med => (
               <div key={med.id} className="p-3 rounded-xl bg-slate-50/90 border border-slate-200/80">

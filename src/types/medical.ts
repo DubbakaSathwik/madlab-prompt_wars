@@ -232,6 +232,8 @@ export interface StructuredAIResponse {
   source: string;      // Specific document and page citations
   explanation: string; // Educational physiological concepts
   note: string;        // Safe non-diagnostic reminder to consult doctor
+  isMedicationWarning?: boolean; // If question touches medications / treatments (renders red alert)
+  isGreeting?: boolean;          // If conversational greeting without clinical record lookup
 }
 
 export interface StructuredClinicalSummary {

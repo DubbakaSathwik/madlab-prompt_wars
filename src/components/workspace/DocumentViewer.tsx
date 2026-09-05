@@ -176,15 +176,6 @@ export const DocumentViewer: React.FC<DocumentViewerProps> = ({
                 <Download className="w-3 h-3 text-slate-500" />
                 <span className="hidden sm:inline">Download</span>
               </a>
-
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-50 border border-slate-200 hover:bg-slate-100 text-slate-700 text-[11px] font-medium transition-colors cursor-pointer"
-                title="Replace / Re-attach file"
-              >
-                <RefreshCw className="w-3 h-3 text-slate-500" />
-                <span className="hidden md:inline">Replace File</span>
-              </button>
             </>
           ) : (
             <button

@@ -4,16 +4,14 @@ import {
   Table, 
   FileCheck, 
   ZoomIn, 
-  ZoomOut, 
-  LayoutTemplate
+  ZoomOut
 } from 'lucide-react';
 import { ClinicalReport, Patient, LabResult, InconsistencyConflict } from '../../types/medical';
 import { DocumentViewer } from './DocumentViewer';
 import { StructuredView } from './StructuredView';
 import { ReportView } from './ReportView';
-import { GeneratedReportView } from './GeneratedReportView';
 
-export type ReportMode = 'SOURCE' | 'STRUCTURED' | 'REPORT' | 'GENERATED';
+export type ReportMode = 'SOURCE' | 'STRUCTURED' | 'REPORT';
 
 interface ReportWorkspaceProps {
   report: ClinicalReport;
@@ -28,6 +26,7 @@ interface ReportWorkspaceProps {
   onAskAIAboutTest: (test: LabResult) => void;
   conflicts?: InconsistencyConflict[];
   onOpenConflictsModal?: () => void;
+  onOpenAddTest?: () => void;
 }
 
 export const ReportWorkspace: React.FC<ReportWorkspaceProps> = ({
@@ -38,7 +37,8 @@ export const ReportWorkspace: React.FC<ReportWorkspaceProps> = ({
   onVerifyTest,
   onAskAIAboutTest,
   conflicts = [],
-  onOpenConflictsModal
+  onOpenConflictsModal,
+  onOpenAddTest
 }) => {
   const [mode, setMode] = useState<ReportMode>('STRUCTURED');
   const [zoomLevel, setZoomLevel] = useState<number>(1.0);
@@ -89,18 +89,6 @@ export const ReportWorkspace: React.FC<ReportWorkspaceProps> = ({
           >
             <FileCheck className="w-4 h-4 text-[#218DAE]" />
             <span>Report</span>
-          </button>
-
-          <button
-            onClick={() => setMode('GENERATED')}
-            className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs md:text-sm font-bold transition-all cursor-pointer ${
-              mode === 'GENERATED'
-                ? 'bg-white text-[#186d88] shadow-xs'
-                : 'text-slate-600 hover:text-slate-900'
-            }`}
-          >
-            <LayoutTemplate className="w-4 h-4 text-[#218DAE]" />
-            <span>Generated</span>
           </button>
         </div>
 
@@ -168,18 +156,12 @@ export const ReportWorkspace: React.FC<ReportWorkspaceProps> = ({
             onAskAIAboutTest={onAskAIAboutTest}
             conflicts={conflicts}
             onOpenConflictsModal={onOpenConflictsModal}
+            onOpenAddTest={onOpenAddTest}
           />
         )}
 
         {mode === 'REPORT' && (
           <ReportView
-            report={report}
-            patient={patient}
-          />
-        )}
-
-        {mode === 'GENERATED' && (
-          <GeneratedReportView
             report={report}
             patient={patient}
           />
