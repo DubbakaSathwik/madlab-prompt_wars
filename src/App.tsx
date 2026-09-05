@@ -3,7 +3,7 @@ import { AuthService } from './services/authService';
 import { MedicalService } from './services/medicalService';
 import { AuthState, UserRole } from './types/auth';
 import { FileStorageService } from './services/fileStorageService';
-import { Patient, ClinicalReport, MedicalJSONRoot, InconsistencyConflict, LabResult } from './types/medical';
+import { Patient, ClinicalReport, MedicalJSONRoot, InconsistencyConflict, LabResult, Allergy, Condition, Medication } from './types/medical';
 
 // Components
 import { IntroSplash } from './components/onboarding/IntroSplash';
@@ -107,19 +107,19 @@ export const App: React.FC = () => {
     setPatients([...MedicalService.getPatients()]);
   };
 
-  const handleAddAllergy = (allergy: any) => {
+  const handleAddAllergy = (allergy: Allergy) => {
     if (!activePatient) return;
     MedicalService.addAllergy(activePatient.id, allergy);
     setPatients([...MedicalService.getPatients()]);
   };
 
-  const handleAddCondition = (condition: any) => {
+  const handleAddCondition = (condition: Condition) => {
     if (!activePatient) return;
     MedicalService.addCondition(activePatient.id, condition);
     setPatients([...MedicalService.getPatients()]);
   };
 
-  const handleAddMedication = (medication: any) => {
+  const handleAddMedication = (medication: Medication) => {
     if (!activePatient) return;
     MedicalService.addMedication(activePatient.id, medication);
     setPatients([...MedicalService.getPatients()]);

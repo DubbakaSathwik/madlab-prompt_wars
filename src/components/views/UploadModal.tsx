@@ -4,6 +4,7 @@ import { OCRService, ExtractedDocumentData } from '../../services/ocrService';
 import { FileStorageService } from '../../services/fileStorageService';
 import { GeminiService } from '../../services/geminiService';
 import { ClinicalReport, ProcessingStage, Patient } from '../../types/medical';
+import { SecuritySanitizer } from '../../utils/sanitize';
 import { User, Plus } from 'lucide-react';
 
 interface UploadModalProps {
@@ -87,14 +88,22 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   };
 
   const startPipeline = async (file: File | { name: string; type: string; size: number }) => {
-    setSelectedFileName(file.name);
     if (file instanceof File) {
+      const validation = SecuritySanitizer.validateUploadFile(file);
+      if (!validation.isValid) {
+        setSelectedFileName(file.name);
+        setErrorMessage(validation.error || 'Invalid file format or size.');
+        setStage('FAILED');
+        return;
+      }
       setUploadedFile(file);
     }
+    const cleanName = SecuritySanitizer.sanitizeFileName(file.name);
+    setSelectedFileName(cleanName);
     setErrorMessage(null);
     setStage('UPLOADED');
     setProgress(15);
-    setStageDescription('Document received and queued for secure processing.');
+    setStageDescription('Document validated and queued for secure processing.');
 
     try {
       // 1. PROCESSING
@@ -205,12 +214,17 @@ export const UploadModal: React.FC<UploadModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-2xs p-4 select-none">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-2xs p-4 select-none"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="upload-pipeline-title"
+    >
       <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-xl w-full p-6 text-xs relative max-h-[90vh] flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-slate-100 shrink-0">
           <div>
-            <h3 className="text-base font-bold text-slate-900">
+            <h3 id="upload-pipeline-title" className="text-base font-bold text-slate-900">
               Clinical Document Ingestion Pipeline
             </h3>
             <p className="text-slate-500 text-[11px] mt-0.5">

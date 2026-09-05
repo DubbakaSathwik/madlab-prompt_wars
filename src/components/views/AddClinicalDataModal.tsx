@@ -11,7 +11,7 @@ import {
   FileText,
   Loader2
 } from 'lucide-react';
-import { Patient, ClinicalReport, LabResult, ResultStatus } from '../../types/medical';
+import { Patient, ClinicalReport, LabResult, ResultStatus, Allergy, Condition, Medication } from '../../types/medical';
 import { GeminiService } from '../../services/geminiService';
 import { ReferenceRangeEngine } from '../../services/referenceRangeEngine';
 
@@ -24,9 +24,9 @@ interface AddClinicalDataModalProps {
   activeReport?: ClinicalReport;
   initialType?: ClinicalEntryType;
   onAddTest: (test: LabResult) => void;
-  onAddAllergy: (allergy: any) => void;
-  onAddCondition: (condition: any) => void;
-  onAddMedication: (medication: any) => void;
+  onAddAllergy: (allergy: Allergy) => void;
+  onAddCondition: (condition: Condition) => void;
+  onAddMedication: (medication: Medication) => void;
 }
 
 export const AddClinicalDataModal: React.FC<AddClinicalDataModalProps> = ({
@@ -52,11 +52,11 @@ export const AddClinicalDataModal: React.FC<AddClinicalDataModalProps> = ({
   // Allergy form fields
   const [allergySubstance, setAllergySubstance] = useState('');
   const [allergyReaction, setAllergyReaction] = useState('');
-  const [allergySeverity, setAllergySeverity] = useState<'MILD' | 'MODERATE' | 'SEVERE' | 'LIFE_THREATENING'>('MODERATE');
+  const [allergySeverity, setAllergySeverity] = useState<'MILD' | 'MODERATE' | 'SEVERE'>('MODERATE');
 
   // Condition form fields
   const [conditionName, setConditionName] = useState('');
-  const [conditionStatus, setConditionStatus] = useState<'ACTIVE' | 'RESOLVED' | 'UNDER_INVESTIGATION'>('ACTIVE');
+  const [conditionStatus, setConditionStatus] = useState<'ACTIVE' | 'RESOLVED' | 'UNDER_EVALUATION'>('ACTIVE');
   const [conditionNotes, setConditionNotes] = useState('');
 
   // Medication form fields
@@ -192,7 +192,9 @@ export const AddClinicalDataModal: React.FC<AddClinicalDataModalProps> = ({
         substance: allergySubstance.trim(),
         reaction: allergyReaction.trim() || undefined,
         severity: allergySeverity,
-        source: 'PATIENT_PROVIDED'
+        source: 'PATIENT_PROVIDED',
+        verified: true,
+        dateNoted: new Date().toISOString().split('T')[0]
       });
     } else if (entryType === 'CONDITION') {
       onAddCondition({
@@ -200,7 +202,8 @@ export const AddClinicalDataModal: React.FC<AddClinicalDataModalProps> = ({
         name: conditionName.trim(),
         status: conditionStatus,
         notes: conditionNotes.trim() || undefined,
-        source: 'PATIENT_PROVIDED'
+        source: 'PATIENT_PROVIDED',
+        diagnosedDate: new Date().toISOString().split('T')[0]
       });
     } else if (entryType === 'MEDICATION') {
       onAddMedication({
@@ -208,8 +211,11 @@ export const AddClinicalDataModal: React.FC<AddClinicalDataModalProps> = ({
         name: medName.trim(),
         dosage: medDosage.trim(),
         frequency: medFrequency.trim(),
+        route: 'Oral',
         prescribingDoctor: medDoctor.trim() || undefined,
-        source: 'PATIENT_PROVIDED'
+        source: 'PATIENT_PROVIDED',
+        active: true,
+        startDate: new Date().toISOString().split('T')[0]
       });
     }
 
@@ -228,6 +234,9 @@ export const AddClinicalDataModal: React.FC<AddClinicalDataModalProps> = ({
     <div 
       className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-xs p-4 select-none animate-fade-in"
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="add-clinical-modal-title"
     >
       <div 
         className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-xl w-full max-h-[90vh] flex flex-col overflow-hidden"
@@ -240,7 +249,7 @@ export const AddClinicalDataModal: React.FC<AddClinicalDataModalProps> = ({
               <Sparkles className="w-5 h-5 text-[#2BBBD7]" />
             </div>
             <div>
-              <h3 className="text-base md:text-lg font-black text-slate-900">
+              <h3 id="add-clinical-modal-title" className="text-base md:text-lg font-black text-slate-900">
                 Add Clinical Data & AI Confirmation
               </h3>
               <p className="text-xs text-slate-500 font-medium">

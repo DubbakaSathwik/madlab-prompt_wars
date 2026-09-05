@@ -5,7 +5,10 @@ import {
   TimelineEvent, 
   MedicalJSONRoot,
   InconsistencyConflict,
-  AuditEvent 
+  AuditEvent,
+  Allergy,
+  Condition,
+  Medication 
 } from '../types/medical';
 import { DEMO_PATIENTS, MOCK_AUDIT_TRAIL } from '../data/mockData';
 import { ConflictService } from './conflictService';
@@ -191,7 +194,7 @@ export class MedicalService {
     }
   }
 
-  static addAllergy(patientId: string, allergy: any): void {
+  static addAllergy(patientId: string, allergy: Allergy): void {
     if (!this.isInitialized) this.init();
     const patient = this.getPatientById(patientId);
     if (patient) {
@@ -200,7 +203,7 @@ export class MedicalService {
     }
   }
 
-  static addCondition(patientId: string, condition: any): void {
+  static addCondition(patientId: string, condition: Condition): void {
     if (!this.isInitialized) this.init();
     const patient = this.getPatientById(patientId);
     if (patient) {
@@ -209,7 +212,7 @@ export class MedicalService {
     }
   }
 
-  static addMedication(patientId: string, medication: any): void {
+  static addMedication(patientId: string, medication: Medication): void {
     if (!this.isInitialized) this.init();
     const patient = this.getPatientById(patientId);
     if (patient) {
@@ -266,6 +269,36 @@ export class MedicalService {
     });
 
     this.persist();
+  }
+
+  /**
+   * Helper method to create and register a ClinicalReport for a patient
+   */
+  static addReport(patientId: string, reportData: Partial<ClinicalReport>): ClinicalReport {
+    const report: ClinicalReport = {
+      id: reportData.id || `rep-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      patientId,
+      reportName: reportData.reportName || 'Clinical Report',
+      reportType: reportData.reportType || 'OTHER',
+      date: reportData.date || new Date().toISOString().split('T')[0],
+      facility: reportData.facility || { name: 'Clinical Laboratory' },
+      doctorName: reportData.doctorName,
+      documentId: reportData.documentId || `DOC-${Date.now()}`,
+      sourceDocument: reportData.sourceDocument || 'Document.pdf',
+      tests: reportData.tests || [],
+      observations: reportData.observations || [],
+      inconsistencies: reportData.inconsistencies || [],
+      verificationSummary: reportData.verificationSummary || {
+        total: (reportData.tests || []).length,
+        verified: (reportData.tests || []).filter(t => t.verification?.status === 'VERIFIED').length,
+        needsReview: (reportData.tests || []).filter(t => t.verification?.status === 'NEEDS_REVIEW').length,
+        rejected: 0
+      },
+      fileUrl: reportData.fileUrl,
+      fileType: reportData.fileType
+    };
+    this.addExtractedReport(patientId, report);
+    return report;
   }
 
   /**
